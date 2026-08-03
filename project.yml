@@ -1,0 +1,40 @@
+name: NeoNotes
+options:
+  bundleIdPrefix: com.lodev09
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+targets:
+  NeoNotes:
+    type: application
+    platform: macOS
+    sources:
+      - NeoNotes
+    info:
+      path: NeoNotes/Info.plist
+      properties:
+        CFBundleName: NeoNotes
+        CFBundleDisplayName: NeoNotes
+        LSUIElement: true
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: © 2026 Jovanni (@lodev09)
+    entitlements:
+      path: NeoNotes/NeoNotes.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.lodev09.NeoNotes
+        com.apple.developer.icloud-services:
+          - CloudDocuments
+        com.apple.developer.ubiquity-container-identifiers:
+          - iCloud.com.lodev09.NeoNotes
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lodev09.NeoNotes
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "5.10"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: true
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

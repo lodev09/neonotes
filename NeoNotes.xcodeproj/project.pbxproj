@@ -1,0 +1,376 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0FF042F36DB79C830D511BA8 /* NotesPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CCDC3ABA9BA67B30BD71522 /* NotesPanelView.swift */; };
+		1DE9B748D9B89C238531352F /* NeoNotesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DC86CD51C534F41C19097CD /* NeoNotesApp.swift */; };
+		247C8935BCD674CA16D18242 /* ColorSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F4A39AB5776A430B0D9C47 /* ColorSupport.swift */; };
+		3E77793A67E53621945B7BA3 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE1C36EA506CB99AC7B2B615 /* Note.swift */; };
+		3ED16E87AF9340C112CFD023 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD7D6DDC7B4B0909910C302 /* SettingsView.swift */; };
+		3F952785F0F18B6C2A73B2D9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 555F136BDD968F632DF3D8D6 /* Assets.xcassets */; };
+		56CEDAAD2AD937A0AFF0721A /* ResizeEdges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1777DB4F8CE6D66B5CC7FFC3 /* ResizeEdges.swift */; };
+		6D46AC99D6C0B20AA2D110F1 /* NoteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B27FB39647CA8070112C6387 /* NoteStore.swift */; };
+		AB8B28F5F5157479A47DDEEF /* MarkdownPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA3F8A67FBE4897536B170B /* MarkdownPreview.swift */; };
+		BADDC8748001C30659FD90DF /* MarkdownHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19D40125FAB93B0ADF6705F /* MarkdownHighlighter.swift */; };
+		E8EC1D96B89FD9F17D5D8316 /* MarkdownEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF2902EC1A9A4C6050E4514 /* MarkdownEditor.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0DC86CD51C534F41C19097CD /* NeoNotesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeoNotesApp.swift; sourceTree = "<group>"; };
+		11F4A39AB5776A430B0D9C47 /* ColorSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorSupport.swift; sourceTree = "<group>"; };
+		1777DB4F8CE6D66B5CC7FFC3 /* ResizeEdges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeEdges.swift; sourceTree = "<group>"; };
+		2CA3F8A67FBE4897536B170B /* MarkdownPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPreview.swift; sourceTree = "<group>"; };
+		4CCDC3ABA9BA67B30BD71522 /* NotesPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesPanelView.swift; sourceTree = "<group>"; };
+		555F136BDD968F632DF3D8D6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6546BDEE8AC00AB41E8E78AD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8EF2902EC1A9A4C6050E4514 /* MarkdownEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownEditor.swift; sourceTree = "<group>"; };
+		9C31CFD340346A967AAC47CC /* NeoNotes-local.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "NeoNotes-local.entitlements"; sourceTree = "<group>"; };
+		A19D40125FAB93B0ADF6705F /* MarkdownHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownHighlighter.swift; sourceTree = "<group>"; };
+		B27FB39647CA8070112C6387 /* NoteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteStore.swift; sourceTree = "<group>"; };
+		B48A3315529DE4DB92424783 /* NeoNotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeoNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE1C36EA506CB99AC7B2B615 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
+		D495C7F37C88AEEC0CCC31AA /* NeoNotes.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NeoNotes.entitlements; sourceTree = "<group>"; };
+		FFD7D6DDC7B4B0909910C302 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		09981083601B49D1249BE483 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B48A3315529DE4DB92424783 /* NeoNotes.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		41D46B9357A146956EAA995B = {
+			isa = PBXGroup;
+			children = (
+				515DC56F2AE09219352D65D3 /* NeoNotes */,
+				09981083601B49D1249BE483 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		494DAE36DF5EF8EE69E3E5A2 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				11F4A39AB5776A430B0D9C47 /* ColorSupport.swift */,
+				A19D40125FAB93B0ADF6705F /* MarkdownHighlighter.swift */,
+				1777DB4F8CE6D66B5CC7FFC3 /* ResizeEdges.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		515DC56F2AE09219352D65D3 /* NeoNotes */ = {
+			isa = PBXGroup;
+			children = (
+				555F136BDD968F632DF3D8D6 /* Assets.xcassets */,
+				6546BDEE8AC00AB41E8E78AD /* Info.plist */,
+				9C31CFD340346A967AAC47CC /* NeoNotes-local.entitlements */,
+				D495C7F37C88AEEC0CCC31AA /* NeoNotes.entitlements */,
+				0DC86CD51C534F41C19097CD /* NeoNotesApp.swift */,
+				BF5CF57BD7F20A3E7F69AECE /* Models */,
+				494DAE36DF5EF8EE69E3E5A2 /* Support */,
+				A17460FCFBDD168CFB49A3AF /* Views */,
+			);
+			path = NeoNotes;
+			sourceTree = "<group>";
+		};
+		A17460FCFBDD168CFB49A3AF /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				8EF2902EC1A9A4C6050E4514 /* MarkdownEditor.swift */,
+				2CA3F8A67FBE4897536B170B /* MarkdownPreview.swift */,
+				4CCDC3ABA9BA67B30BD71522 /* NotesPanelView.swift */,
+				FFD7D6DDC7B4B0909910C302 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		BF5CF57BD7F20A3E7F69AECE /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				CE1C36EA506CB99AC7B2B615 /* Note.swift */,
+				B27FB39647CA8070112C6387 /* NoteStore.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		61D0C18AB425D596E84C449B /* NeoNotes */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 282825C296EE762D6C5BA82E /* Build configuration list for PBXNativeTarget "NeoNotes" */;
+			buildPhases = (
+				2D6461C29FAAB09BB98098FC /* Sources */,
+				A16558A5873692D7E57C78B6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NeoNotes;
+			packageProductDependencies = (
+			);
+			productName = NeoNotes;
+			productReference = B48A3315529DE4DB92424783 /* NeoNotes.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		33DEEBB8AACB633EE07AA651 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					61D0C18AB425D596E84C449B = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 5EF69175655BC9C47A1ED054 /* Build configuration list for PBXProject "NeoNotes" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 41D46B9357A146956EAA995B;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 09981083601B49D1249BE483 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				61D0C18AB425D596E84C449B /* NeoNotes */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A16558A5873692D7E57C78B6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F952785F0F18B6C2A73B2D9 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2D6461C29FAAB09BB98098FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				247C8935BCD674CA16D18242 /* ColorSupport.swift in Sources */,
+				E8EC1D96B89FD9F17D5D8316 /* MarkdownEditor.swift in Sources */,
+				BADDC8748001C30659FD90DF /* MarkdownHighlighter.swift in Sources */,
+				AB8B28F5F5157479A47DDEEF /* MarkdownPreview.swift in Sources */,
+				1DE9B748D9B89C238531352F /* NeoNotesApp.swift in Sources */,
+				3E77793A67E53621945B7BA3 /* Note.swift in Sources */,
+				6D46AC99D6C0B20AA2D110F1 /* NoteStore.swift in Sources */,
+				0FF042F36DB79C830D511BA8 /* NotesPanelView.swift in Sources */,
+				56CEDAAD2AD937A0AFF0721A /* ResizeEdges.swift in Sources */,
+				3ED16E87AF9340C112CFD023 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		386308CDC940FC4738E93E9E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = NeoNotes/NeoNotes.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = NeoNotes/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lodev09.NeoNotes;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		4DA4C2FADF09E543BE4271E3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B6198EFADBE19FBE39C2E5D1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E3DA25F04E40CE503C492C64 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = NeoNotes/NeoNotes.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = NeoNotes/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lodev09.NeoNotes;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		282825C296EE762D6C5BA82E /* Build configuration list for PBXNativeTarget "NeoNotes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E3DA25F04E40CE503C492C64 /* Debug */,
+				386308CDC940FC4738E93E9E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5EF69175655BC9C47A1ED054 /* Build configuration list for PBXProject "NeoNotes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4DA4C2FADF09E543BE4271E3 /* Debug */,
+				B6198EFADBE19FBE39C2E5D1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 33DEEBB8AACB633EE07AA651 /* Project object */;
+}
