@@ -172,6 +172,9 @@ final class StatsTextView: NSTextView {
 }
 
 struct MarkdownEditor: NSViewRepresentable {
+    @AppStorage(MarkdownHighlighter.fontSizeKey) private var fontSize = MarkdownHighlighter.defaultFontSize
+    @AppStorage(MarkdownHighlighter.lineSpacingKey) private var lineSpacing = MarkdownHighlighter.defaultLineSpacing
+
     @Binding var text: String
     var noteID: String
     var bottomInset: CGFloat = 0
@@ -237,6 +240,15 @@ struct MarkdownEditor: NSViewRepresentable {
             scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
         }
 
+        if context.coordinator.fontSize != fontSize || context.coordinator.lineSpacing != lineSpacing {
+            context.coordinator.fontSize = fontSize
+            context.coordinator.lineSpacing = lineSpacing
+            textView.typingAttributes = MarkdownHighlighter.typingAttributes
+            if let storage = textView.textStorage {
+                MarkdownHighlighter.highlight(storage)
+            }
+        }
+
         if context.coordinator.noteID != noteID {
             // Close the pending typing group on the outgoing note's undo manager
             textView.breakUndoCoalescing()
@@ -272,6 +284,8 @@ struct MarkdownEditor: NSViewRepresentable {
         var noteID: String
         var didFocus = false
         var lastEditRange: NSRange?
+        var fontSize = MarkdownHighlighter.defaultFontSize
+        var lineSpacing = MarkdownHighlighter.defaultLineSpacing
         private var undoManagers: [String: UndoManager] = [:]
 
         var editorUndoManager: UndoManager {

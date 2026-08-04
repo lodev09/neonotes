@@ -144,6 +144,9 @@ private final class PreviewTextView: NSTextView {
 
 /// Read-only rendered view of a note's markdown with native text selection.
 struct MarkdownPreview: NSViewRepresentable {
+    @AppStorage(MarkdownHighlighter.fontSizeKey) private var fontSize = MarkdownHighlighter.defaultFontSize
+    @AppStorage(MarkdownHighlighter.lineSpacingKey) private var lineSpacing = MarkdownHighlighter.defaultLineSpacing
+
     let text: String
     var bottomInset: CGFloat = 0
     var onFooterOcclusionChange: ((Bool) -> Void)?
@@ -165,7 +168,7 @@ struct MarkdownPreview: NSViewRepresentable {
         textView.isEditable = false
         textView.isSelectable = true
         textView.drawsBackground = false
-        textView.textContainerInset = NSSize(width: 10, height: 14)
+        textView.textContainerInset = NSSize(width: 10, height: 16)
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
@@ -217,6 +220,12 @@ struct MarkdownPreview: NSViewRepresentable {
             scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
         }
 
+        if context.coordinator.fontSize != fontSize || context.coordinator.lineSpacing != lineSpacing {
+            context.coordinator.fontSize = fontSize
+            context.coordinator.lineSpacing = lineSpacing
+            context.coordinator.renderedText = nil
+        }
+
         if context.coordinator.renderedText != text {
             context.coordinator.renderedText = text
             let visibleOrigin = scrollView.contentView.bounds.origin
@@ -238,6 +247,8 @@ struct MarkdownPreview: NSViewRepresentable {
         var parent: MarkdownPreview
         weak var textView: NSTextView?
         var renderedText: String?
+        var fontSize = MarkdownHighlighter.defaultFontSize
+        var lineSpacing = MarkdownHighlighter.defaultLineSpacing
         private var contentUnderFooter = false
 
         init(_ parent: MarkdownPreview) {
@@ -269,7 +280,7 @@ struct MarkdownPreview: NSViewRepresentable {
 // MARK: - Rendering
 
 private enum MarkdownRenderer {
-    static let fontSize: CGFloat = 13.5
+    static var fontSize: CGFloat { MarkdownHighlighter.fontSize }
 
     static func render(_ text: String) -> NSAttributedString {
         let result = NSMutableAttributedString()
@@ -281,6 +292,7 @@ private enum MarkdownRenderer {
             if index < blocks.count - 1, !rendered.string.hasSuffix("\n") {
                 result.append(NSAttributedString(string: "\n", attributes: [
                     .font: NSFont.systemFont(ofSize: fontSize),
+                    .paragraphStyle: style(),
                 ]))
             }
         }
@@ -290,24 +302,30 @@ private enum MarkdownRenderer {
     private static func render(_ block: Block) -> NSAttributedString {
         switch block {
         case .heading(let level, let text):
-            let size: CGFloat = level == 1 ? 21 : (level == 2 ? 17.5 : 15)
-            let weight: NSFont.Weight = level == 1 ? .bold : .semibold
-            let heading = NSMutableAttributedString(attributedString: inline(text, font: .systemFont(ofSize: size, weight: weight)))
+            let heading = NSMutableAttributedString(
+                attributedString: inline(text, font: MarkdownHighlighter.headingFont(level: level))
+            )
             heading.addAttribute(
                 .paragraphStyle,
-                value: style(before: level <= 2 ? 8 : 4, after: 0),
+                value: style(),
                 range: NSRange(location: 0, length: heading.length)
             )
             return heading
 
         case .paragraph(let text):
-            return inline(text)
+            let paragraph = NSMutableAttributedString(attributedString: inline(text))
+            paragraph.addAttribute(
+                .paragraphStyle,
+                value: style(),
+                range: NSRange(location: 0, length: paragraph.length)
+            )
+            return paragraph
 
         case .code(let code):
             let attributed = NSMutableAttributedString(string: code, attributes: [
-                .font: NSFont.monospacedSystemFont(ofSize: fontSize - 1, weight: .regular),
+                .font: MarkdownHighlighter.monoFont,
                 .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: style(before: 8, after: 14, firstIndent: 4, headIndent: 4),
+                .paragraphStyle: style(firstIndent: 4, headIndent: 4),
             ])
             attributed.addAttribute(.codeBlock, value: true, range: NSRange(location: 0, length: attributed.length))
             return attributed
@@ -336,7 +354,7 @@ private enum MarkdownRenderer {
             item.append(inline(text))
             item.addAttribute(
                 .paragraphStyle,
-                value: style(after: 4, firstIndent: 4, headIndent: 22, tabStop: 22),
+                value: style(firstIndent: 4, headIndent: 22, tabStop: 22),
                 range: NSRange(location: 0, length: item.length)
             )
             return item
@@ -353,7 +371,7 @@ private enum MarkdownRenderer {
             item.append(inline(text, color: done ? .secondaryLabelColor : .labelColor))
             item.addAttribute(
                 .paragraphStyle,
-                value: style(after: 4, firstIndent: 4, headIndent: 26, tabStop: 26),
+                value: style(firstIndent: 4, headIndent: 26, tabStop: 26),
                 range: NSRange(location: 0, length: item.length)
             )
             return item
@@ -370,7 +388,7 @@ private enum MarkdownRenderer {
                 attributes: [
                     .font: NSFont.systemFont(ofSize: fontSize),
                     .horizontalRule: true,
-                    .paragraphStyle: style(before: 4, after: 12),
+                    .paragraphStyle: style(),
                 ]
             )
         }
@@ -411,7 +429,7 @@ private enum MarkdownRenderer {
                 let style = NSMutableParagraphStyle()
                 style.textBlocks = [block]
                 style.alignment = column < alignments.count ? alignments[column] : .left
-                style.lineSpacing = 2.5
+                style.lineSpacing = MarkdownHighlighter.lineSpacing
 
                 let font: NSFont = rowIndex == 0
                     ? .systemFont(ofSize: fontSize, weight: .semibold)
@@ -457,16 +475,12 @@ private enum MarkdownRenderer {
     }
 
     private static func style(
-        before: CGFloat = 0,
-        after: CGFloat = 9,
         firstIndent: CGFloat = 0,
         headIndent: CGFloat = 0,
         tabStop: CGFloat? = nil
     ) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
-        style.lineSpacing = 2.5
-        style.paragraphSpacingBefore = before
-        style.paragraphSpacing = after
+        style.lineSpacing = MarkdownHighlighter.lineSpacing
         style.firstLineHeadIndent = firstIndent
         style.headIndent = headIndent
         if let tabStop {

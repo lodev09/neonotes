@@ -196,7 +196,7 @@ struct NotesPanelView: View {
                         NSApp.activate(ignoringOtherApps: true)
                         openWindow(id: "about")
                     }
-                    Button("Settings…") { openAppSettings() }
+                    Button("Settings") { openAppSettings() }
                         .keyboardShortcut(",", modifiers: .command)
                     Divider()
                     Button("Quit NeoNotes") { NSApp.terminate(nil) }

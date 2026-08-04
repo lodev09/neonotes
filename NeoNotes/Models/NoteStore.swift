@@ -331,11 +331,13 @@ final class NoteStore: ObservableObject {
     Notes in your **menu bar** — plain markdown files, always one click away.
 
     ## Try it
+
     - [ ] Click this checkbox
     - [ ] Press ⌘E to see this note rendered
     - [ ] Add an item below and press Return — the list continues for you
 
     ## Markdown, built in
+
     - **Bold**, *italic*, ~~strikethrough~~, `inline code`
     - [Links](https://github.com/lodev09/neonotes)
 
@@ -350,6 +352,7 @@ final class NoteStore: ObservableObject {
     | Preview me | with ⌘E |
 
     ## Shortcuts
+
     - ⌘N — new note
     - ⌘E — preview
     - ⌘[ / ⌘] — switch notes

@@ -1,16 +1,35 @@
 import AppKit
 
 enum MarkdownHighlighter {
-    static let fontSize: CGFloat = 13.5
+    static let fontSizeKey = "editorFontSize"
+    static let lineSpacingKey = "editorLineSpacing"
+    static let defaultFontSize = 13.5
+    static let defaultLineSpacing = 2.5
+    static let fontSizeRange = 11.0...20.0
+    static let lineSpacingRange = 0.0...10.0
+
+    static var fontSize: CGFloat { setting(fontSizeKey, default: defaultFontSize) }
+    static var lineSpacing: CGFloat { setting(lineSpacingKey, default: defaultLineSpacing) }
+
+    private static func setting(_ key: String, default fallback: Double) -> CGFloat {
+        CGFloat(UserDefaults.standard.object(forKey: key) as? Double ?? fallback)
+    }
 
     static var baseFont: NSFont { .systemFont(ofSize: fontSize) }
     static var monoFont: NSFont { .monospacedSystemFont(ofSize: fontSize - 1, weight: .regular) }
 
-    private static let paragraphStyle: NSParagraphStyle = {
+    /// Shared with the preview so both modes lay headings out on the same line height.
+    static func headingFont(level: Int) -> NSFont {
+        let scale: CGFloat = level == 1 ? 1.4 : (level == 2 ? 1.22 : 1.07)
+        // Half-point steps keep headings on tidy sizes as the base font scales.
+        return .systemFont(ofSize: (fontSize * scale * 2).rounded() / 2, weight: .semibold)
+    }
+
+    private static var paragraphStyle: NSParagraphStyle {
         let style = NSMutableParagraphStyle()
-        style.lineSpacing = 2.5
+        style.lineSpacing = lineSpacing
         return style
-    }()
+    }
 
     static var typingAttributes: [NSAttributedString.Key: Any] {
         [
@@ -64,9 +83,7 @@ enum MarkdownHighlighter {
 
         heading.enumerateMatches(in: storage.string, range: full) { match, _, _ in
             guard let match else { return }
-            let level = match.range(at: 1).length
-            let size: CGFloat = level == 1 ? 19 : (level == 2 ? 16.5 : 14.5)
-            storage.addAttribute(.font, value: NSFont.systemFont(ofSize: size, weight: .semibold), range: match.range)
+            storage.addAttribute(.font, value: headingFont(level: match.range(at: 1).length), range: match.range)
             storage.addAttribute(.foregroundColor, value: NSColor.tertiaryLabelColor, range: match.range(at: 1))
         }
 

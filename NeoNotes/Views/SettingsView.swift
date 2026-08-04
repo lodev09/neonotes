@@ -5,6 +5,8 @@ import ServiceManagement
 struct SettingsView: View {
     @EnvironmentObject private var store: NoteStore
     @State private var launchAtLogin = false
+    @AppStorage(MarkdownHighlighter.fontSizeKey) private var fontSize = MarkdownHighlighter.defaultFontSize
+    @AppStorage(MarkdownHighlighter.lineSpacingKey) private var lineSpacing = MarkdownHighlighter.defaultLineSpacing
 
     var body: some View {
         VStack(spacing: 12) {
@@ -45,6 +47,24 @@ struct SettingsView: View {
             }
 
             card {
+                sliderRow(
+                    "textformat.size",
+                    .purple,
+                    "Font Size",
+                    value: $fontSize,
+                    range: MarkdownHighlighter.fontSizeRange
+                )
+
+                sliderRow(
+                    "arrow.up.and.down.text.horizontal",
+                    .orange,
+                    "Line Spacing",
+                    value: $lineSpacing,
+                    range: MarkdownHighlighter.lineSpacingRange
+                )
+            }
+
+            card {
                 HStack(spacing: 10) {
                     iconBadge("power", .green)
                     Text("Launch at Login")
@@ -71,6 +91,28 @@ struct SettingsView: View {
     private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         VStack(spacing: 0, content: content)
             .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func sliderRow(
+        _ symbol: String,
+        _ color: Color,
+        _ title: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>
+    ) -> some View {
+        HStack(spacing: 10) {
+            iconBadge(symbol, color)
+            Text(title)
+            Spacer(minLength: 12)
+            Slider(value: value, in: range, step: 0.5)
+                .frame(width: 150)
+            Text(value.wrappedValue.formatted())
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 26, alignment: .trailing)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     private func iconBadge(_ symbol: String, _ color: Color) -> some View {
