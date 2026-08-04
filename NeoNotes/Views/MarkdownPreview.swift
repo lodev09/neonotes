@@ -17,9 +17,11 @@ private final class PreviewLayoutManager: NSLayoutManager {
                 guard value != nil else { return }
                 let glyphs = glyphRange(forCharacterRange: range, actualCharacterRange: nil)
                 var rect = boundingRect(forGlyphRange: glyphs, in: container)
-                rect.origin.x = container.lineFragmentPadding
-                rect.size.width = container.size.width - container.lineFragmentPadding * 2
-                rect = rect.insetBy(dx: -6, dy: -5).offsetBy(dx: origin.x, dy: origin.y)
+                // NSTextView clips background drawing to the container rect,
+                // so the stroke must stay inside it.
+                rect.origin.x = 0.5
+                rect.size.width = container.size.width - 1
+                rect = rect.insetBy(dx: 0, dy: -5).offsetBy(dx: origin.x, dy: origin.y)
 
                 let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
                 NSColor.textBackgroundColor.withAlphaComponent(0.55).setFill()
@@ -198,8 +200,10 @@ private enum MarkdownRenderer {
         let result = NSMutableAttributedString()
         let blocks = parse(text)
         for (index, block) in blocks.enumerated() {
-            result.append(render(block))
-            if index < blocks.count - 1 {
+            let rendered = render(block)
+            result.append(rendered)
+            // Table cells carry their own paragraph-terminating newlines.
+            if index < blocks.count - 1, !rendered.string.hasSuffix("\n") {
                 result.append(NSAttributedString(string: "\n", attributes: [
                     .font: NSFont.systemFont(ofSize: fontSize),
                 ]))
@@ -278,6 +282,9 @@ private enum MarkdownRenderer {
             )
             return item
 
+        case .table(let header, let alignments, let rows):
+            return renderTable(header: header, alignments: alignments, rows: rows)
+
         case .blank:
             return NSAttributedString()
 
@@ -291,6 +298,52 @@ private enum MarkdownRenderer {
                 ]
             )
         }
+    }
+
+    private static func renderTable(
+        header: [String],
+        alignments: [NSTextAlignment],
+        rows: [[String]]
+    ) -> NSAttributedString {
+        let table = NSTextTable()
+        table.numberOfColumns = header.count
+        table.collapsesBorders = true
+
+        let result = NSMutableAttributedString()
+        for (rowIndex, row) in ([header] + rows).enumerated() {
+            for column in 0..<header.count {
+                let block = NSTextTableBlock(
+                    table: table,
+                    startingRow: rowIndex,
+                    rowSpan: 1,
+                    startingColumn: column,
+                    columnSpan: 1
+                )
+                block.setBorderColor(.separatorColor)
+                block.setWidth(1, type: .absoluteValueType, for: .border)
+                block.setWidth(6, type: .absoluteValueType, for: .padding)
+                block.setValue(100.0 / CGFloat(header.count), type: .percentageValueType, for: .width)
+                if rowIndex == 0 {
+                    block.backgroundColor = NSColor.textBackgroundColor.withAlphaComponent(0.55)
+                }
+
+                let style = NSMutableParagraphStyle()
+                style.textBlocks = [block]
+                style.alignment = column < alignments.count ? alignments[column] : .left
+                style.lineSpacing = 2.5
+
+                let font: NSFont = rowIndex == 0
+                    ? .systemFont(ofSize: fontSize, weight: .semibold)
+                    : .systemFont(ofSize: fontSize)
+                let cell = NSMutableAttributedString(
+                    attributedString: inline(column < row.count ? row[column] : "", font: font)
+                )
+                cell.append(NSAttributedString(string: "\n", attributes: [.font: font]))
+                cell.addAttribute(.paragraphStyle, value: style, range: NSRange(location: 0, length: cell.length))
+                result.append(cell)
+            }
+        }
+        return result
     }
 
     private static func checkboxImage(done: Bool) -> NSImage? {
@@ -380,6 +433,7 @@ private enum MarkdownRenderer {
         case quote(String)
         case listItem(marker: String, text: String)
         case task(done: Bool, text: String, line: Int)
+        case table(header: [String], alignments: [NSTextAlignment], rows: [[String]])
         case rule
         case blank
     }
@@ -389,6 +443,26 @@ private enum MarkdownRenderer {
     private static let bulletRegex = try! NSRegularExpression(pattern: "^[-*+]\\s+(.*)$")
     private static let orderedRegex = try! NSRegularExpression(pattern: "^(\\d+)[.)]\\s+(.*)$")
     private static let ruleRegex = try! NSRegularExpression(pattern: "^(-{3,}|\\*{3,}|_{3,})$")
+    private static let tableSeparatorRegex = try! NSRegularExpression(
+        pattern: "^\\|\\s*:?-+:?\\s*(\\|\\s*:?-+:?\\s*)*\\|?$"
+    )
+
+    private static func tableCells(_ line: String) -> [String] {
+        var cells = line.components(separatedBy: "|")
+        if cells.first?.trimmingCharacters(in: .whitespaces).isEmpty == true { cells.removeFirst() }
+        if cells.last?.trimmingCharacters(in: .whitespaces).isEmpty == true { cells.removeLast() }
+        return cells.map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
+    private static func tableAlignments(_ separator: String) -> [NSTextAlignment] {
+        tableCells(separator).map { spec in
+            switch (spec.hasPrefix(":"), spec.hasSuffix(":")) {
+            case (true, true): return .center
+            case (false, true): return .right
+            default: return .left
+            }
+        }
+    }
 
     private static func groups(_ regex: NSRegularExpression, _ string: String) -> [String]? {
         let range = NSRange(string.startIndex..., in: string)
@@ -419,7 +493,11 @@ private enum MarkdownRenderer {
             }
         }
 
-        for (lineIndex, line) in text.components(separatedBy: "\n").enumerated() {
+        let lines = text.components(separatedBy: "\n")
+        var skipUntil = -1
+
+        for (lineIndex, line) in lines.enumerated() {
+            if lineIndex <= skipUntil { continue }
             let trimmed = line.trimmingCharacters(in: .whitespaces)
 
             if inCode {
@@ -451,6 +529,26 @@ private enum MarkdownRenderer {
                 continue
             }
             flushQuote()
+
+            if trimmed.hasPrefix("|"), lineIndex + 1 < lines.count,
+               groups(tableSeparatorRegex, lines[lineIndex + 1].trimmingCharacters(in: .whitespaces)) != nil {
+                let header = tableCells(trimmed)
+                if !header.isEmpty {
+                    flushParagraph()
+                    let alignments = tableAlignments(lines[lineIndex + 1].trimmingCharacters(in: .whitespaces))
+                    var rows: [[String]] = []
+                    var next = lineIndex + 2
+                    while next < lines.count {
+                        let row = lines[next].trimmingCharacters(in: .whitespaces)
+                        guard row.hasPrefix("|") else { break }
+                        rows.append(tableCells(row))
+                        next += 1
+                    }
+                    blocks.append(.table(header: header, alignments: alignments, rows: rows))
+                    skipUntil = next - 1
+                    continue
+                }
+            }
 
             if let m = groups(headingRegex, trimmed) {
                 flushParagraph()
