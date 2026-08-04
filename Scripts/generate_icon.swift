@@ -76,22 +76,10 @@ for (i, width) in lineWidths.enumerated() {
     ))
 }
 
-// Flat gradient fill over the glyph
-ctx.saveGState()
+// Flat fill over the glyph
 ctx.addPath(glyph)
-ctx.clip()
-let glyphGradient = CGGradient(
-    colorsSpace: CGColorSpaceCreateDeviceRGB(),
-    colors: [color(0x38E1FF), color(0x8B7CFF), color(0xFF5FD2)] as CFArray,
-    locations: [0, 0.5, 1]
-)!
-ctx.drawLinearGradient(
-    glyphGradient,
-    start: CGPoint(x: cardRect.minX - 40, y: cardRect.maxY + 40),
-    end: CGPoint(x: cardRect.maxX + 40, y: cardRect.minY - 40),
-    options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
-)
-ctx.restoreGState()
+ctx.setFillColor(color(0x38E1FF))
+ctx.fillPath()
 
 ctx.restoreGState() // background clip
 NSGraphicsContext.restoreGraphicsState()
