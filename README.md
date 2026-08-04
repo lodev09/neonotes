@@ -38,7 +38,7 @@ The project is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen) 
 
 ## Notes Storage
 
-Notes are stored as plain markdown files — by default in `~/Library/Application Support/NeoNotes/Notes`, or any folder you pick in Settings. Existing `.md` files in the chosen folder are loaded automatically.
+Notes are stored as plain markdown files — by default inside the app's sandbox container (`~/Library/Containers/com.lodev09.NeoNotes/Data/Library/Application Support/NeoNotes/Notes`), or any folder you pick in Settings (e.g. `~/Documents/Notes`). Existing `.md` files in the chosen folder are loaded automatically.
 
 ## Contributing
 

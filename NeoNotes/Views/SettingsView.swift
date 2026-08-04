@@ -88,7 +88,11 @@ struct SettingsView: View {
         panel.canCreateDirectories = true
         panel.prompt = "Choose"
         panel.message = "Choose a folder for your notes"
-        panel.directoryURL = store.notesDirectory
+        // Don't point the panel at the sandbox container; let it open
+        // somewhere sensible (last used / Documents) when on the default
+        if let custom = store.customNotesURL {
+            panel.directoryURL = custom
+        }
         if panel.runModal() == .OK, let url = panel.url {
             store.setNotesDirectory(url)
         }
