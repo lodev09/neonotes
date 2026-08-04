@@ -28,6 +28,44 @@ final class StatsTextView: NSTextView {
         super.setFrameSize(size)
     }
 
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 1, toggleTaskBox(at: convert(event.locationInWindow, from: nil)) {
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    private func toggleTaskBox(at point: NSPoint) -> Bool {
+        guard let layoutManager, let textContainer else { return false }
+        let containerPoint = NSPoint(
+            x: point.x - textContainerOrigin.x,
+            y: point.y - textContainerOrigin.y
+        )
+        var fraction: CGFloat = 0
+        let index = layoutManager.characterIndex(
+            for: containerPoint,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: &fraction
+        )
+        let text = string as NSString
+        guard index < text.length else { return false }
+
+        let lineRange = text.lineRange(for: NSRange(location: index, length: 0))
+        guard let box = MarkdownSyntax.taskBoxRange(in: text.substring(with: lineRange)) else { return false }
+        let boxRange = NSRange(location: lineRange.location + box.location, length: box.length)
+
+        let glyphs = layoutManager.glyphRange(forCharacterRange: boxRange, actualCharacterRange: nil)
+        let boxRect = layoutManager.boundingRect(forGlyphRange: glyphs, in: textContainer)
+        guard boxRect.insetBy(dx: -2, dy: -2).contains(containerPoint) else { return false }
+
+        let markRange = NSRange(location: boxRange.location + 1, length: 1)
+        let mark = text.substring(with: markRange) == " " ? "x" : " "
+        guard shouldChangeText(in: markRange, replacementString: mark) else { return false }
+        textStorage?.replaceCharacters(in: markRange, with: mark)
+        didChangeText()
+        return true
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard !statsText.isEmpty, let layoutManager, let textContainer else { return }
@@ -162,6 +200,37 @@ struct MarkdownEditor: NSViewRepresentable {
                 location: affectedCharRange.location,
                 length: (replacementString ?? "").utf16.count
             )
+            return true
+        }
+
+        func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            guard commandSelector == #selector(NSResponder.insertNewline(_:)) else { return false }
+            let selection = textView.selectedRange()
+            guard selection.length == 0 else { return false }
+
+            let text = textView.string as NSString
+            let lineRange = text.lineRange(for: NSRange(location: selection.location, length: 0))
+            var line = text.substring(with: lineRange)
+            if line.hasSuffix("\n") { line.removeLast() }
+
+            guard let action = MarkdownSyntax.newlineAction(
+                forLine: line,
+                cursorOffset: selection.location - lineRange.location
+            ) else { return false }
+
+            switch action {
+            case .continueList(let prefix):
+                textView.insertText("\n" + prefix, replacementRange: selection)
+            case .endList(let markerRange):
+                let absolute = NSRange(
+                    location: lineRange.location + markerRange.location,
+                    length: markerRange.length
+                )
+                if textView.shouldChangeText(in: absolute, replacementString: "") {
+                    textView.textStorage?.replaceCharacters(in: absolute, with: "")
+                    textView.didChangeText()
+                }
+            }
             return true
         }
 

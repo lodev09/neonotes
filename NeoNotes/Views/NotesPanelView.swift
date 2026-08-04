@@ -66,7 +66,8 @@ struct NotesPanelView: View {
                     MarkdownPreview(
                         text: store.selectedNote?.content ?? "",
                         bottomInset: footerHeight,
-                        onFooterOcclusionChange: { contentUnderFooter = $0 }
+                        onFooterOcclusionChange: { contentUnderFooter = $0 },
+                        onToggleTask: { toggleTask(atLine: $0) }
                     )
                 } else {
                     MarkdownEditor(
@@ -114,6 +115,15 @@ struct NotesPanelView: View {
         }
         .onAppear { store.reload() }
         .onDisappear { store.flush() }
+    }
+
+    private func toggleTask(atLine lineIndex: Int) {
+        guard let note = store.selectedNote else { return }
+        var lines = note.content.components(separatedBy: "\n")
+        guard lines.indices.contains(lineIndex),
+              let toggled = MarkdownSyntax.togglingTask(in: lines[lineIndex]) else { return }
+        lines[lineIndex] = toggled
+        store.updateContent(lines.joined(separator: "\n"), for: store.selectedID)
     }
 
     private var contentBinding: Binding<String> {

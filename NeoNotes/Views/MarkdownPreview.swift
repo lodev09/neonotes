@@ -5,6 +5,7 @@ struct MarkdownPreview: View {
     let text: String
     var bottomInset: CGFloat = 0
     var onFooterOcclusionChange: ((Bool) -> Void)?
+    var onToggleTask: ((_ lineIndex: Int) -> Void)?
 
     @State private var contentMaxY: CGFloat = 0
     @State private var viewportHeight: CGFloat = 0
@@ -53,7 +54,7 @@ struct MarkdownPreview: View {
         case code(String)
         case quote(String)
         case listItem(marker: String, text: String)
-        case task(done: Bool, text: String)
+        case task(done: Bool, text: String, line: Int)
         case rule
     }
 
@@ -94,11 +95,16 @@ struct MarkdownPreview: View {
                     .lineSpacing(2.5)
             }
             .padding(.leading, 4)
-        case .task(let done, let text):
+        case .task(let done, let text, let line):
             HStack(alignment: .firstTextBaseline, spacing: 7) {
-                Image(systemName: done ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(done ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                Button {
+                    onToggleTask?(line)
+                } label: {
+                    Image(systemName: done ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(done ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                }
+                .buttonStyle(.plain)
                 Text(inline(text))
                     .font(.system(size: 13.5))
                     .lineSpacing(2.5)
@@ -163,7 +169,7 @@ struct MarkdownPreview: View {
             }
         }
 
-        for line in text.components(separatedBy: "\n") {
+        for (lineIndex, line) in text.components(separatedBy: "\n").enumerated() {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
 
             if inCode {
@@ -203,7 +209,7 @@ struct MarkdownPreview: View {
                 blocks.append(.rule)
             } else if let m = groups(taskRegex, trimmed) {
                 flushParagraph()
-                blocks.append(.task(done: m[1].lowercased() == "x", text: m[2]))
+                blocks.append(.task(done: m[1].lowercased() == "x", text: m[2], line: lineIndex))
             } else if let m = groups(bulletRegex, trimmed) {
                 flushParagraph()
                 blocks.append(.listItem(marker: "•", text: m[1]))
