@@ -221,6 +221,12 @@ struct MarkdownPreview: NSViewRepresentable {
             context.coordinator.renderedText = text
             let visibleOrigin = scrollView.contentView.bounds.origin
             textView.textStorage?.setAttributedString(MarkdownRenderer.render(text))
+            // Layout is lazy and nothing else forces it inside the panel's
+            // event loop, so the window would repaint one interaction late.
+            if let container = textView.textContainer {
+                textView.layoutManager?.ensureLayout(for: container)
+            }
+            textView.needsDisplay = true
             textView.scroll(visibleOrigin)
         }
         DispatchQueue.main.async {
@@ -343,10 +349,11 @@ private enum MarkdownRenderer {
             item.append(NSAttributedString(attachment: attachment))
             item.append(NSAttributedString(string: "\t"))
             item.addAttribute(.taskLine, value: line, range: NSRange(location: 0, length: item.length))
+            item.addAttribute(.cursor, value: NSCursor.arrow, range: NSRange(location: 0, length: 1))
             item.append(inline(text, color: done ? .secondaryLabelColor : .labelColor))
             item.addAttribute(
                 .paragraphStyle,
-                value: style(after: 4, firstIndent: 4, headIndent: 22, tabStop: 22),
+                value: style(after: 4, firstIndent: 4, headIndent: 26, tabStop: 26),
                 range: NSRange(location: 0, length: item.length)
             )
             return item
@@ -427,21 +434,26 @@ private enum MarkdownRenderer {
         return result
     }
 
-    private static func checkboxImage(done: Bool) -> NSImage? {
-        let config = NSImage.SymbolConfiguration(pointSize: 12.5, weight: .regular)
-        guard let symbol = NSImage(
-            systemSymbolName: done ? "checkmark.square.fill" : "square",
-            accessibilityDescription: done ? "Completed" : "To do"
-        )?.withSymbolConfiguration(config) else { return nil }
+    private final class FlippedView: NSView {
+        override var isFlipped: Bool { true }
+    }
 
-        let color: NSColor = done ? .controlAccentColor : .secondaryLabelColor
-        let tinted = NSImage(size: symbol.size, flipped: false) { rect in
-            symbol.draw(in: rect)
-            color.set()
-            rect.fill(using: .sourceAtop)
+    private static let checkboxHostView = FlippedView()
+
+    private static func checkboxImage(done: Bool) -> NSImage {
+        let cell = NSButtonCell()
+        cell.setButtonType(.switch)
+        cell.title = ""
+        cell.state = done ? .on : .off
+        cell.controlSize = .small
+        // Drawing handler re-runs on each draw, so appearance and accent
+        // color changes are picked up without re-rendering.
+        let image = NSImage(size: NSSize(width: 14, height: 14), flipped: true) { rect in
+            cell.draw(withFrame: rect, in: checkboxHostView)
             return true
         }
-        return tinted
+        image.accessibilityDescription = done ? "Completed" : "To do"
+        return image
     }
 
     private static func style(
