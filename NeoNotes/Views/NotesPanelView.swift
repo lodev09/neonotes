@@ -12,9 +12,9 @@ struct IconButtonStyle: ButtonStyle {
 
         var body: some View {
             configuration.label
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 12.5, weight: .medium))
                 .foregroundStyle(.secondary)
-                .frame(width: 28, height: 28)
+                .frame(width: 25, height: 25)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
                         .fill(.primary.opacity(configuration.isPressed ? 0.12 : hovering ? 0.07 : 0))
@@ -32,7 +32,7 @@ struct HoverChrome<Content: View>: View {
 
     var body: some View {
         content
-            .frame(minWidth: 28, minHeight: 28)
+            .frame(minWidth: 25, minHeight: 25)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(.primary.opacity(hovering ? 0.07 : 0))
@@ -115,6 +115,19 @@ struct NotesPanelView: View {
         }
         .onAppear { store.reload() }
         .onDisappear { store.flush() }
+        .background {
+            // Shortcuts inside Menu items only work while the menu is open;
+            // this invisible button makes ⌘, work from the panel itself
+            Button("") { openAppSettings() }
+                .keyboardShortcut(",", modifiers: .command)
+                .opacity(0)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func openAppSettings() {
+        NSApp.activate(ignoringOtherApps: true)
+        openSettings()
     }
 
     private func toggleTask(atLine lineIndex: Int) {
@@ -178,20 +191,15 @@ struct NotesPanelView: View {
 
             HoverChrome {
                 Menu {
-                    Button("Reveal Notes Folder in Finder") { store.revealInFinder() }
-                    Button("Settings…") {
-                        NSApp.activate(ignoringOtherApps: true)
-                        openSettings()
-                    }
-                    .keyboardShortcut(",", modifiers: .command)
-                    Divider()
+                    Button("Settings…") { openAppSettings() }
+                        .keyboardShortcut(",", modifiers: .command)
                     Button("Quit NeoNotes") { NSApp.terminate(nil) }
                         .keyboardShortcut("q", modifiers: .command)
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 12.5, weight: .medium))
                         .foregroundStyle(.secondary)
-                        .frame(width: 28, height: 28)
+                        .frame(width: 25, height: 25)
                 }
                 .menuStyle(.button)
                 .buttonStyle(.plain)
@@ -221,7 +229,12 @@ struct NotesPanelView: View {
                 Button {
                     isPreviewing.toggle()
                 } label: {
-                    Image(systemName: isPreviewing ? "pencil.line" : "eye")
+                    Image(systemName: "textformat")
+                        .foregroundStyle(
+                            isPreviewing
+                                ? AnyShapeStyle(store.color(for: store.selectedID ?? ""))
+                                : AnyShapeStyle(.secondary)
+                        )
                 }
                 .buttonStyle(IconButtonStyle())
                 .keyboardShortcut("e", modifiers: .command)
