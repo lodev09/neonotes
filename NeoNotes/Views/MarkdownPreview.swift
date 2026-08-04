@@ -282,6 +282,8 @@ struct MarkdownPreview: NSViewRepresentable {
 private enum MarkdownRenderer {
     static var fontSize: CGFloat { MarkdownHighlighter.fontSize }
 
+    private static let bullet = "\u{25CF}"
+
     static func render(_ text: String) -> NSAttributedString {
         let result = NSMutableAttributedString()
         let blocks = parse(text)
@@ -347,10 +349,7 @@ private enum MarkdownRenderer {
             return quote
 
         case .listItem(let marker, let text):
-            let item = NSMutableAttributedString(string: "\(marker)\t", attributes: [
-                .font: NSFont.systemFont(ofSize: fontSize, weight: .semibold),
-                .foregroundColor: NSColor.controlAccentColor,
-            ])
+            let item = NSMutableAttributedString(string: "\(marker)\t", attributes: markerAttributes(marker))
             item.append(inline(text))
             item.addAttribute(
                 .paragraphStyle,
@@ -472,6 +471,21 @@ private enum MarkdownRenderer {
         }
         image.accessibilityDescription = done ? "Completed" : "To do"
         return image
+    }
+
+    /// Bullets draw a larger glyph at a fraction of the text size, offset back up
+    /// to the text's optical centre. Scaling "•" up instead would make the marker
+    /// drive the line height and put list rows out of step with the editor.
+    private static func markerAttributes(_ marker: String) -> [NSAttributedString.Key: Any] {
+        var attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: fontSize, weight: .semibold),
+            .foregroundColor: NSColor.controlAccentColor,
+        ]
+        if marker == bullet {
+            attributes[.font] = NSFont.systemFont(ofSize: fontSize * 0.41)
+            attributes[.baselineOffset] = fontSize * 0.14
+        }
+        return attributes
     }
 
     private static func style(
@@ -668,7 +682,7 @@ private enum MarkdownRenderer {
                 blocks.append(.task(done: m[1].lowercased() == "x", text: m[2], line: lineIndex))
             } else if let m = groups(bulletRegex, trimmed) {
                 flushParagraph()
-                blocks.append(.listItem(marker: "•", text: m[1]))
+                blocks.append(.listItem(marker: bullet, text: m[1]))
             } else if let m = groups(orderedRegex, trimmed) {
                 flushParagraph()
                 blocks.append(.listItem(marker: "\(m[1]).", text: m[2]))

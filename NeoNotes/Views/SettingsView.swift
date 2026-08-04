@@ -27,10 +27,7 @@ struct SettingsView: View {
                 }
                 .padding(12)
 
-                Divider()
-                    .padding(.leading, 48)
-
-                HStack {
+                footer {
                     Text("Markdown files in this folder load automatically.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
@@ -42,8 +39,6 @@ struct SettingsView: View {
                     Button("Show in Finder") { store.revealInFinder() }
                         .controlSize(.small)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
             }
 
             card {
@@ -62,6 +57,19 @@ struct SettingsView: View {
                     value: $lineSpacing,
                     range: MarkdownHighlighter.lineSpacingRange
                 )
+
+                footer {
+                    Text("Applies to the editor and the preview.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Button("Use Default") {
+                        fontSize = MarkdownHighlighter.defaultFontSize
+                        lineSpacing = MarkdownHighlighter.defaultLineSpacing
+                    }
+                    .controlSize(.small)
+                    .disabled(isDefaultTypography)
+                }
             }
 
             card {
@@ -85,6 +93,21 @@ struct SettingsView: View {
         .fixedSize()
         .onAppear {
             launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
+    }
+
+    private var isDefaultTypography: Bool {
+        fontSize == MarkdownHighlighter.defaultFontSize
+            && lineSpacing == MarkdownHighlighter.defaultLineSpacing
+    }
+
+    /// Secondary row pinned to the bottom of a card, split off by a full-width rule.
+    private func footer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 8, content: content)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
         }
     }
 
