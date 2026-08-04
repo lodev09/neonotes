@@ -8,6 +8,23 @@ enum MarkdownSyntax {
     private static let listPrefix = try! NSRegularExpression(
         pattern: "^([ \t]*)(?:([-*+])[ \t]+(\\[(?: |x|X)\\][ \t]*)?|(\\d+)([.)])[ \t]+)"
     )
+    static let link = try! NSRegularExpression(pattern: "\\[([^\\]\n]*)\\]\\(([^)\n]+)\\)")
+    static let bareLink = try! NSRegularExpression(pattern: "https?://[^\\s<>\"')\\]]+")
+
+    /// URL and range of the markdown or bare link containing `offset` in `line`, or nil.
+    static func linkMatch(in line: String, at offset: Int) -> (url: URL, range: NSRange)? {
+        let ns = line as NSString
+        let range = NSRange(location: 0, length: ns.length)
+        for match in link.matches(in: line, range: range) where NSLocationInRange(offset, match.range) {
+            guard let url = URL(string: ns.substring(with: match.range(at: 2))) else { return nil }
+            return (url, match.range)
+        }
+        for match in bareLink.matches(in: line, range: range) where NSLocationInRange(offset, match.range) {
+            guard let url = URL(string: ns.substring(with: match.range)) else { return nil }
+            return (url, match.range)
+        }
+        return nil
+    }
 
     /// Range of the checkbox ("[ ]" or "[x]") within a task line.
     static func taskBoxRange(in line: String) -> NSRange? {

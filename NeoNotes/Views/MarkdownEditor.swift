@@ -29,10 +29,97 @@ final class StatsTextView: NSTextView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 1, toggleTaskBox(at: convert(event.locationInWindow, from: nil)) {
+        let point = convert(event.locationInWindow, from: nil)
+        if event.modifierFlags.contains(.command), openLink(at: point) {
+            return
+        }
+        if event.clickCount == 1, toggleTaskBox(at: point) {
             return
         }
         super.mouseDown(with: event)
+    }
+
+    private func openLink(at point: NSPoint) -> Bool {
+        guard let url = link(at: point) else { return false }
+        NSWorkspace.shared.open(url)
+        return true
+    }
+
+    private func link(at point: NSPoint) -> URL? {
+        guard let layoutManager, let textContainer else { return nil }
+        let containerPoint = NSPoint(
+            x: point.x - textContainerOrigin.x,
+            y: point.y - textContainerOrigin.y
+        )
+        var fraction: CGFloat = 0
+        let index = layoutManager.characterIndex(
+            for: containerPoint,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: &fraction
+        )
+        let text = string as NSString
+        guard index < text.length else { return nil }
+
+        let lineRange = text.lineRange(for: NSRange(location: index, length: 0))
+        guard let match = MarkdownSyntax.linkMatch(
+            in: text.substring(with: lineRange),
+            at: index - lineRange.location
+        ) else { return nil }
+
+        // characterIndex(for:) snaps to the nearest glyph, so make sure the
+        // pointer is actually over the link
+        let absolute = NSRange(location: lineRange.location + match.range.location, length: match.range.length)
+        let glyphs = layoutManager.glyphRange(forCharacterRange: absolute, actualCharacterRange: nil)
+        let rect = layoutManager.boundingRect(forGlyphRange: glyphs, in: textContainer)
+        guard rect.contains(containerPoint) else { return nil }
+        return match.url
+    }
+
+    private var linkTrackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let linkTrackingArea { removeTrackingArea(linkTrackingArea) }
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseMoved, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        linkTrackingArea = area
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        if !refreshLinkCursor() {
+            super.mouseMoved(with: event)
+        }
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        if !refreshLinkCursor() {
+            super.cursorUpdate(with: event)
+        }
+    }
+
+    override func flagsChanged(with event: NSEvent) {
+        super.flagsChanged(with: event)
+        if !refreshLinkCursor(), let window {
+            let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+            if visibleRect.contains(point) {
+                NSCursor.iBeam.set()
+            }
+        }
+    }
+
+    /// Sets the hand cursor when cmd is held over a link; returns whether it did.
+    @discardableResult
+    private func refreshLinkCursor() -> Bool {
+        guard let window, NSEvent.modifierFlags.contains(.command) else { return false }
+        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        guard visibleRect.contains(point), link(at: point) != nil else { return false }
+        NSCursor.pointingHand.set()
+        return true
     }
 
     private func toggleTaskBox(at point: NSPoint) -> Bool {

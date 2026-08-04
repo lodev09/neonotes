@@ -29,11 +29,13 @@ enum MarkdownHighlighter {
     private static let listMarker = regex("^[ \t]*(?:[-*+]|\\d+\\.)[ \t]")
     private static let taskBox = regex("^[ \t]*[-*+][ \t]\\[( |x|X)\\]")
     private static let horizontalRule = regex("^[ \t]*(-{3,}|\\*{3,}|_{3,})[ \t]*$")
-    private static let bold = regex("(\\*\\*|__)(?=\\S)(.+?)(?<=\\S)\\1", [])
-    private static let italic = regex("(?<![*_])[*_](?![*_\\s])([^*_\n]+)(?<![\\s])[*_](?![*_])", [])
+    // Underscore emphasis requires word boundaries; intraword underscores (a_b_c) are literal
+    private static let bold = regex("\\*\\*(?=\\S)(.+?)(?<=\\S)\\*\\*|(?<!\\w)__(?=\\S)(.+?)(?<=\\S)__(?!\\w)", [])
+    private static let italic = regex("(?<![*_])\\*(?![*_\\s])([^*_\n]+)(?<!\\s)\\*(?![*_])|(?<![*_\\w])_(?![*_\\s])([^*_\n]+)(?<!\\s)_(?![*_\\w])", [])
     private static let strikethrough = regex("~~(?=\\S)(.+?)(?<=\\S)~~", [])
     private static let inlineCode = regex("`[^`\n]+`", [])
-    private static let link = regex("\\[([^\\]\n]*)\\]\\(([^)\n]+)\\)", [])
+    private static let link = MarkdownSyntax.link
+    private static let bareLink = MarkdownSyntax.bareLink
     private static let codeFence = regex("^```.*?^```[ \t]*$", [.anchorsMatchLines, .dotMatchesLineSeparators])
 
     static func highlight(_ storage: NSTextStorage) {
@@ -110,6 +112,11 @@ enum MarkdownHighlighter {
                 .foregroundColor: NSColor.secondaryLabelColor,
             ], range: match.range(at: 1))
             dimMarkers(storage, match: match, markerLength: 2)
+        }
+
+        bareLink.enumerateMatches(in: storage.string, range: full) { match, _, _ in
+            guard let match else { return }
+            storage.addAttribute(.foregroundColor, value: NSColor.linkColor, range: match.range)
         }
 
         link.enumerateMatches(in: storage.string, range: full) { match, _, _ in
