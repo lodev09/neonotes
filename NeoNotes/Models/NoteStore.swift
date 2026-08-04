@@ -132,13 +132,25 @@ final class NoteStore: ObservableObject {
         guard !pendingSaves.isEmpty else { return }
         for id in pendingSaves {
             guard let note = notes.first(where: { $0.id == id }) else { continue }
-            let url = fileURL(for: id)
-            try? note.content.write(to: url, atomically: true, encoding: .utf8)
-            // Atomic writes replace the file, resetting the creation date
-            // that reload() sorts by
-            try? FileManager.default.setAttributes([.creationDate: note.createdAt], ofItemAtPath: url.path)
+            try? save(note.content, to: fileURL(for: id))
         }
         pendingSaves.removeAll()
+    }
+
+    /// Safe-save that preserves the original file's metadata — reload()
+    /// sorts by creation date, which a plain atomic write would reset.
+    private func save(_ content: String, to url: URL) throws {
+        let fm = FileManager.default
+        let tempDir = try fm.url(
+            for: .itemReplacementDirectory,
+            in: .userDomainMask,
+            appropriateFor: url,
+            create: true
+        )
+        defer { try? fm.removeItem(at: tempDir) }
+        let tempURL = tempDir.appendingPathComponent(url.lastPathComponent)
+        try content.write(to: tempURL, atomically: false, encoding: .utf8)
+        _ = try fm.replaceItemAt(url, withItemAt: tempURL)
     }
 
     @discardableResult
