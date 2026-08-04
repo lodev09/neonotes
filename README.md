@@ -1,6 +1,6 @@
 # NeoNotes
 
-Markdown notes in your macOS menu bar — always one click away.
+Markdown notes in your macOS menu bar. always one click away.
 
 <img alt="NeoNotes" src="preview.png" height="500" />
 
