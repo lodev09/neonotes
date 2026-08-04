@@ -2,6 +2,8 @@
 
 Markdown notes in your macOS menu bar — always one click away.
 
+<img alt="NeoNotes" src="preview.gif" height="500" />
+
 ## Features
 
 - **Menu bar native** — lives in your menu bar, no dock icon
