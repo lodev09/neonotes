@@ -47,6 +47,7 @@ struct NotesPanelView: View {
 
     @EnvironmentObject private var store: NoteStore
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
     @AppStorage("panelWidth") private var panelWidth = 460.0
     @AppStorage("panelHeight") private var panelHeight = 580.0
     @State private var footerHeight: CGFloat = 40
@@ -191,8 +192,13 @@ struct NotesPanelView: View {
 
             HoverChrome {
                 Menu {
+                    Button("About NeoNotes") {
+                        NSApp.activate(ignoringOtherApps: true)
+                        openWindow(id: "about")
+                    }
                     Button("Settings…") { openAppSettings() }
                         .keyboardShortcut(",", modifiers: .command)
+                    Divider()
                     Button("Quit NeoNotes") { NSApp.terminate(nil) }
                         .keyboardShortcut("q", modifiers: .command)
                 } label: {

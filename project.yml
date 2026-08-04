@@ -22,12 +22,8 @@ targets:
       path: NeoNotes/NeoNotes.entitlements
       properties:
         com.apple.security.app-sandbox: true
-        com.apple.developer.icloud-container-identifiers:
-          - iCloud.com.lodev09.NeoNotes
-        com.apple.developer.icloud-services:
-          - CloudDocuments
-        com.apple.developer.ubiquity-container-identifiers:
-          - iCloud.com.lodev09.NeoNotes
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.files.bookmarks.app-scope: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lodev09.NeoNotes

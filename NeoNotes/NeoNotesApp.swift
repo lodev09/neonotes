@@ -17,5 +17,10 @@ struct NeoNotessApp: App {
             SettingsView()
                 .environmentObject(store)
         }
+
+        Window("About NeoNotes", id: "about") {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
     }
 }
