@@ -15,6 +15,8 @@ targets:
       properties:
         CFBundleName: NeoNotes
         CFBundleDisplayName: NeoNotes
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSUIElement: true
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         NSHumanReadableCopyright: © 2026 Jovanni (@lodev09)
