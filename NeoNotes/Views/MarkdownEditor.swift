@@ -238,8 +238,9 @@ struct MarkdownEditor: NSViewRepresentable {
         }
 
         if context.coordinator.noteID != noteID {
+            // Close the pending typing group on the outgoing note's undo manager
+            textView.breakUndoCoalescing()
             context.coordinator.noteID = noteID
-            context.coordinator.editorUndoManager.removeAllActions()
             textView.string = text
             if let storage = textView.textStorage {
                 MarkdownHighlighter.highlight(storage)
@@ -271,7 +272,14 @@ struct MarkdownEditor: NSViewRepresentable {
         var noteID: String
         var didFocus = false
         var lastEditRange: NSRange?
-        let editorUndoManager = UndoManager()
+        private var undoManagers: [String: UndoManager] = [:]
+
+        var editorUndoManager: UndoManager {
+            if let manager = undoManagers[noteID] { return manager }
+            let manager = UndoManager()
+            undoManagers[noteID] = manager
+            return manager
+        }
 
         init(_ parent: MarkdownEditor) {
             self.parent = parent
