@@ -345,6 +345,10 @@ final class NoteStore: ObservableObject {
     Fenced code blocks too
     ```
 
+    | Tables | Too |
+    | --- | --- |
+    | Preview me | with ⌘E |
+
     ## Shortcuts
     - ⌘N — new note
     - ⌘E — preview

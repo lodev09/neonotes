@@ -6,9 +6,18 @@ private extension NSAttributedString.Key {
     static let taskLine = NSAttributedString.Key("taskLine")
     /// Marks fenced code paragraphs so the layout manager can draw a card behind them.
     static let codeBlock = NSAttributedString.Key("codeBlock")
+    /// Marks a thematic break paragraph so the layout manager can draw a full-width line.
+    static let horizontalRule = NSAttributedString.Key("horizontalRule")
+    /// Marks table paragraphs so the layout manager can draw a rounded border around the table.
+    static let tableBlock = NSAttributedString.Key("tableBlock")
+    /// Marks a table's header row so the layout manager can draw its tinted background.
+    static let tableHeader = NSAttributedString.Key("tableHeader")
 }
 
-/// Draws a rounded card behind fenced code blocks.
+/// Cell padding used both for table layout and to reconstruct table frames when drawing chrome.
+private let tableCellPadding: CGFloat = 6
+
+/// Draws a rounded card behind fenced code blocks and full-width horizontal rules.
 private final class PreviewLayoutManager: NSLayoutManager {
     override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
         if let storage = textStorage, let container = textContainers.first {
@@ -30,8 +39,68 @@ private final class PreviewLayoutManager: NSLayoutManager {
                 path.lineWidth = 1
                 path.stroke()
             }
+            storage.enumerateAttribute(.tableBlock, in: charRange) { value, range, _ in
+                guard value != nil else { return }
+                // Expand to the whole table so partial redraws don't clip the chrome.
+                var tableRange = NSRange()
+                _ = storage.attribute(
+                    .tableBlock,
+                    at: range.location,
+                    longestEffectiveRange: &tableRange,
+                    in: NSRange(location: 0, length: storage.length)
+                )
+                let radius: CGFloat = 6
+                let tableRect = tableChromeRect(for: tableRange, in: container)
+                    .offsetBy(dx: origin.x, dy: origin.y)
+
+                var headerRange = NSRange()
+                if storage.attribute(
+                    .tableHeader,
+                    at: tableRange.location,
+                    longestEffectiveRange: &headerRange,
+                    in: tableRange
+                ) != nil {
+                    var headerRect = tableChromeRect(for: headerRange, in: container)
+                        .offsetBy(dx: origin.x, dy: origin.y)
+                    headerRect.origin.y = tableRect.minY
+                    NSGraphicsContext.current?.saveGraphicsState()
+                    NSBezierPath(rect: headerRect).addClip()
+                    var fill = headerRect
+                    fill.size.height += radius
+                    NSColor.controlAccentColor.withAlphaComponent(0.12).setFill()
+                    NSBezierPath(roundedRect: fill, xRadius: radius, yRadius: radius).fill()
+                    NSGraphicsContext.current?.restoreGraphicsState()
+                }
+
+                let path = NSBezierPath(roundedRect: tableRect, xRadius: radius, yRadius: radius)
+                NSColor.separatorColor.setStroke()
+                path.lineWidth = 1
+                path.stroke()
+            }
+            storage.enumerateAttribute(.horizontalRule, in: charRange) { value, range, _ in
+                guard value != nil else { return }
+                let glyphs = glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+                let rect = boundingRect(forGlyphRange: glyphs, in: container)
+                NSColor.separatorColor.setFill()
+                NSRect(
+                    x: origin.x,
+                    y: origin.y + rect.midY - 0.5,
+                    width: container.size.width,
+                    height: 1
+                ).fill()
+            }
         }
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
+    }
+
+    /// Full-width frame of a table range, outset to cover the cell padding
+    /// that sits outside the glyph bounding rect.
+    private func tableChromeRect(for charRange: NSRange, in container: NSTextContainer) -> NSRect {
+        let glyphs = glyphRange(forCharacterRange: charRange, actualCharacterRange: nil)
+        var rect = boundingRect(forGlyphRange: glyphs, in: container)
+        rect.origin.x = 0.5
+        rect.size.width = container.size.width - 1
+        return rect.insetBy(dx: 0, dy: -tableCellPadding)
     }
 }
 
@@ -290,10 +359,10 @@ private enum MarkdownRenderer {
 
         case .rule:
             return NSAttributedString(
-                string: String(repeating: "─", count: 24),
+                string: "\u{00A0}",
                 attributes: [
                     .font: NSFont.systemFont(ofSize: fontSize),
-                    .foregroundColor: NSColor.quaternaryLabelColor,
+                    .horizontalRule: true,
                     .paragraphStyle: style(before: 4, after: 12),
                 ]
             )
@@ -310,6 +379,7 @@ private enum MarkdownRenderer {
         table.collapsesBorders = true
 
         let result = NSMutableAttributedString()
+        var headerLength = 0
         for (rowIndex, row) in ([header] + rows).enumerated() {
             for column in 0..<header.count {
                 let block = NSTextTableBlock(
@@ -319,13 +389,17 @@ private enum MarkdownRenderer {
                     startingColumn: column,
                     columnSpan: 1
                 )
+                // Interior grid lines only — the rounded outer border and header
+                // background are drawn by PreviewLayoutManager.
                 block.setBorderColor(.separatorColor)
-                block.setWidth(1, type: .absoluteValueType, for: .border)
-                block.setWidth(6, type: .absoluteValueType, for: .padding)
-                block.setValue(100.0 / CGFloat(header.count), type: .percentageValueType, for: .width)
-                if rowIndex == 0 {
-                    block.backgroundColor = NSColor.textBackgroundColor.withAlphaComponent(0.55)
+                if rowIndex > 0 {
+                    block.setWidth(1, type: .absoluteValueType, for: .border, edge: .minY)
                 }
+                if column > 0 {
+                    block.setWidth(1, type: .absoluteValueType, for: .border, edge: .minX)
+                }
+                block.setWidth(tableCellPadding, type: .absoluteValueType, for: .padding)
+                block.setValue(100.0 / CGFloat(header.count), type: .percentageValueType, for: .width)
 
                 let style = NSMutableParagraphStyle()
                 style.textBlocks = [block]
@@ -342,7 +416,14 @@ private enum MarkdownRenderer {
                 cell.addAttribute(.paragraphStyle, value: style, range: NSRange(location: 0, length: cell.length))
                 result.append(cell)
             }
+            if rowIndex == 0 {
+                headerLength = result.length
+            }
         }
+        // Exclude the final newline — its glyph is laid out as an extra
+        // full-width fragment below the table and would inflate the chrome rect.
+        result.addAttribute(.tableBlock, value: true, range: NSRange(location: 0, length: result.length - 1))
+        result.addAttribute(.tableHeader, value: true, range: NSRange(location: 0, length: headerLength))
         return result
     }
 

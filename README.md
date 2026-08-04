@@ -1,17 +1,17 @@
 # NeoNotes
 
-Markdown notes in your macOS menu bar. always one click away.
+Markdown notes in your macOS menu bar — always one click away.
 
 <img alt="NeoNotes" src="preview.png" height="500" />
 
 ## Features
 
-- **Menu bar native** — lives in your menu bar, no dock icon
-- **Plain markdown files** — notes are just `.md` files in a folder you choose
-- **Live syntax highlighting** — headings, bold/italic, code, quotes, links
-- **Preview mode** — rendered markdown with clickable checkboxes
-- **Tasks** — `- [ ]` checkboxes, toggle by clicking in editor or preview
-- **List autocomplete** — Return continues bullets, numbered lists, and tasks
+- **Menu bar native** — no dock icon
+- **Plain markdown files** — notes are `.md` files in a folder you choose
+- **Live syntax highlighting** while you type
+- **Preview mode** — rendered markdown with tables and clickable checkboxes
+- **Tasks** — `- [ ]` checkboxes, toggle in editor or preview
+- **List autocomplete** — Return continues bullets, numbers, and tasks
 - **Auto-sync** — external file changes are picked up automatically
 - **Note colors, resizable panel, launch at login**
 
@@ -40,7 +40,7 @@ The project is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen) 
 
 ## Notes Storage
 
-Notes are stored as plain markdown files — by default inside the app's sandbox container (`~/Library/Containers/com.lodev09.NeoNotes/Data/Library/Application Support/NeoNotes/Notes`), or any folder you pick in Settings (e.g. `~/Documents/Notes`). Existing `.md` files in the chosen folder are loaded automatically.
+Notes live in the app's sandbox container by default, or any folder you pick in Settings (e.g. `~/Documents/Notes`). Existing `.md` files there are loaded automatically.
 
 ## Contributing
 
