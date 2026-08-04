@@ -312,18 +312,30 @@ final class NoteStore: ObservableObject {
     private static let welcomeContent = """
     # Welcome to NeoNotes 👋
 
-    Your notes live in the **menu bar** — always one click away.
+    Notes in your **menu bar** — plain markdown files, always one click away.
+
+    ## Try it
+    - [ ] Click this checkbox
+    - [ ] Press ⌘E to see this note rendered
+    - [ ] Add an item below and press Return — the list continues for you
 
     ## Markdown, built in
-    - **Bold**, *italic*, ~~strikethrough~~
-    - `inline code` and fenced blocks
-    - [Links](https://example.com)
-    - > Quotes
+    - **Bold**, *italic*, ~~strikethrough~~, `inline code`
+    - [Links](https://github.com/lodev09/neonotes)
 
-    ## Tips
+    > Quotes look like this
+
+    ```
+    Fenced code blocks too
+    ```
+
+    ## Shortcuts
     - ⌘N — new note
-    - ⌘[ and ⌘] — switch notes
-    - Pick your **notes folder** in Settings — existing markdown files load automatically
+    - ⌘E — preview
+    - ⌘[ / ⌘] — switch notes
+    - ⌘, — settings
+
+    Your notes are plain `.md` files. Pick their folder in **Settings** — existing notes load automatically.
 
     Happy noting!
     """
