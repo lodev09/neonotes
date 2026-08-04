@@ -205,6 +205,9 @@ struct MarkdownEditor: NSViewRepresentable {
 
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             guard commandSelector == #selector(NSResponder.insertNewline(_:)) else { return false }
+            // Coalesced typing makes undo swallow everything since the last
+            // pause; per-line granularity keeps undo predictable
+            textView.breakUndoCoalescing()
             let selection = textView.selectedRange()
             guard selection.length == 0 else { return false }
 

@@ -74,7 +74,14 @@ struct MarkdownPreview: View {
                 .font(.system(size: 12.5, design: .monospaced))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
-                .background(RoundedRectangle(cornerRadius: 6).fill(.primary.opacity(0.05)))
+                .background {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color(nsColor: .textBackgroundColor).opacity(0.55))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(.separator, lineWidth: 1)
+                        }
+                }
         case .quote(let string):
             HStack(alignment: .top, spacing: 8) {
                 RoundedRectangle(cornerRadius: 1.5)
@@ -126,10 +133,20 @@ struct MarkdownPreview: View {
     }
 
     private func inline(_ string: String) -> AttributedString {
-        (try? AttributedString(
+        var attributed = (try? AttributedString(
             markdown: string,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         )) ?? AttributedString(string)
+
+        let codeRanges = attributed.runs.compactMap { run in
+            run.inlinePresentationIntent?.contains(.code) == true ? run.range : nil
+        }
+        for range in codeRanges {
+            attributed[range].font = .system(size: 12.5, design: .monospaced)
+            attributed[range].foregroundColor = Color(nsColor: .systemPink)
+            attributed[range].backgroundColor = Color(nsColor: .textBackgroundColor).opacity(0.55)
+        }
+        return attributed
     }
 
     // MARK: - Parsing

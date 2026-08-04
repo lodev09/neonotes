@@ -246,8 +246,7 @@ struct NotesPanelView: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(IconButtonStyle())
-                .keyboardShortcut(.delete, modifiers: .command)
-                .help("Delete Note (⌘⌫)")
+                .help("Delete Note")
             }
 
         }
