@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 final class NoteStore: ObservableObject {
-    private static let useICloudKey = "useICloud"
+    private static let folderBookmarkKey = "notesFolderBookmark"
     private static let noteColorsKey = "noteColors"
 
     static let palette: [(name: String, hex: String)] = [
@@ -22,19 +22,12 @@ final class NoteStore: ObservableObject {
     @Published var selectedID: String? {
         didSet { if oldValue != selectedID { flush() } }
     }
-    @Published private(set) var iCloudAvailable = false
     @Published private(set) var noteColors: [String: String] =
         UserDefaults.standard.dictionary(forKey: NoteStore.noteColorsKey) as? [String: String] ?? [:]
-    @Published var useICloud: Bool {
-        didSet {
-            guard oldValue != useICloud else { return }
-            UserDefaults.standard.set(useICloud, forKey: Self.useICloudKey)
-            migrate(toICloud: useICloud)
-        }
-    }
+    /// User-chosen folder (security-scoped); nil means the default location.
+    @Published private(set) var customNotesURL: URL?
 
-    private var ubiquityNotesURL: URL?
-    private let localNotesURL: URL = {
+    private let defaultNotesURL: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return base.appendingPathComponent("NeoNotes/Notes", isDirectory: true)
     }()
@@ -45,8 +38,7 @@ final class NoteStore: ObservableObject {
     private var directoryMonitor: DispatchSourceFileSystemObject?
 
     var notesDirectory: URL {
-        if useICloud, let ubiquityNotesURL { return ubiquityNotesURL }
-        return localNotesURL
+        customNotesURL ?? defaultNotesURL
     }
 
     var selectedNote: Note? {
@@ -58,24 +50,9 @@ final class NoteStore: ObservableObject {
     }
 
     init() {
-        useICloud = UserDefaults.standard.bool(forKey: Self.useICloudKey)
+        customNotesURL = Self.restoreCustomFolder()
         reload()
         watchDirectory()
-
-        Task.detached(priority: .utility) { [weak self] in
-            let url = FileManager.default
-                .url(forUbiquityContainerIdentifier: nil)?
-                .appendingPathComponent("Documents/Notes", isDirectory: true)
-            await MainActor.run {
-                guard let self else { return }
-                self.ubiquityNotesURL = url
-                self.iCloudAvailable = url != nil
-                if self.useICloud, url != nil {
-                    self.reload()
-                    self.watchDirectory()
-                }
-            }
-        }
 
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,
@@ -100,10 +77,6 @@ final class NoteStore: ObservableObject {
 
         var loaded: [Note] = []
         for url in files {
-            if url.lastPathComponent.hasSuffix(".icloud") {
-                try? fm.startDownloadingUbiquitousItem(at: url)
-                continue
-            }
             guard url.pathExtension.lowercased() == "md",
                   let content = try? String(contentsOf: url, encoding: .utf8) else { continue }
 
@@ -255,43 +228,51 @@ final class NoteStore: ObservableObject {
         return Int(hash % UInt64(palette.count))
     }
 
-    // MARK: - iCloud migration
+    // MARK: - Notes folder location
 
-    private func migrate(toICloud: Bool) {
+    /// Pass nil to go back to the default location.
+    func setNotesDirectory(_ url: URL?) {
         flush()
-        guard let ubiquityNotesURL else {
-            reload()
-            watchDirectory()
-            return
+        customNotesURL?.stopAccessingSecurityScopedResource()
+
+        if let url {
+            let data = try? url.bookmarkData(
+                options: .withSecurityScope,
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+            UserDefaults.standard.set(data, forKey: Self.folderBookmarkKey)
+            _ = url.startAccessingSecurityScopedResource()
+            customNotesURL = url
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.folderBookmarkKey)
+            customNotesURL = nil
         }
 
-        let source = toICloud ? localNotesURL : ubiquityNotesURL
-        let destination = toICloud ? ubiquityNotesURL : localNotesURL
+        reload()
+        watchDirectory()
+    }
 
-        Task.detached(priority: .userInitiated) { [weak self] in
-            let fm = FileManager.default
-            try? fm.createDirectory(at: destination, withIntermediateDirectories: true)
-            let files = (try? fm.contentsOfDirectory(at: source, includingPropertiesForKeys: nil)) ?? []
-
-            for file in files where file.pathExtension.lowercased() == "md" {
-                var target = destination.appendingPathComponent(file.lastPathComponent)
-                if fm.fileExists(atPath: target.path) {
-                    let name = file.deletingPathExtension().lastPathComponent
-                    target = destination.appendingPathComponent("\(name) (moved).md")
-                }
-                do {
-                    try fm.setUbiquitous(toICloud, itemAt: file, destinationURL: target)
-                } catch {
-                    try? fm.copyItem(at: file, to: target)
-                    try? fm.removeItem(at: file)
-                }
-            }
-
-            await MainActor.run {
-                self?.reload()
-                self?.watchDirectory()
-            }
+    private static func restoreCustomFolder() -> URL? {
+        guard let data = UserDefaults.standard.data(forKey: folderBookmarkKey) else { return nil }
+        var stale = false
+        guard let url = try? URL(
+            resolvingBookmarkData: data,
+            options: .withSecurityScope,
+            relativeTo: nil,
+            bookmarkDataIsStale: &stale
+        ), url.startAccessingSecurityScopedResource() else {
+            UserDefaults.standard.removeObject(forKey: folderBookmarkKey)
+            return nil
         }
+        if stale, let fresh = try? url.bookmarkData(
+            options: .withSecurityScope,
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        ) {
+            UserDefaults.standard.set(fresh, forKey: folderBookmarkKey)
+        }
+        return url
     }
 
     // MARK: - Directory watching
@@ -342,7 +323,7 @@ final class NoteStore: ObservableObject {
     ## Tips
     - ⌘N — new note
     - ⌘[ and ⌘] — switch notes
-    - Turn on **iCloud sync** in Settings
+    - Pick your **notes folder** in Settings — existing markdown files load automatically
 
     Happy noting!
     """

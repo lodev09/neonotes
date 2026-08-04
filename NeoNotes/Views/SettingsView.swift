@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import ServiceManagement
 
@@ -8,14 +9,21 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Store notes in iCloud Drive", isOn: $store.useICloud)
-                    .disabled(!store.iCloudAvailable)
-            } footer: {
-                if store.iCloudAvailable {
-                    Text("Notes are moved to iCloud Drive and sync across your Macs.")
-                } else {
-                    Text("Sign in to iCloud and enable iCloud Drive to sync notes. Requires the app to be signed with an iCloud-enabled team.")
+                LabeledContent("Notes folder") {
+                    Text(store.notesDirectory.path)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .foregroundStyle(.secondary)
                 }
+                HStack {
+                    Button("Change…") { chooseFolder() }
+                    if store.customNotesURL != nil {
+                        Button("Use Default") { store.setNotesDirectory(nil) }
+                    }
+                    Button("Reveal in Finder") { store.revealInFinder() }
+                }
+            } footer: {
+                Text("Markdown files already in the folder are loaded automatically.")
             }
 
             Section {
@@ -24,22 +32,25 @@ struct SettingsView: View {
                         setLaunchAtLogin(enabled)
                     }
             }
-
-            Section {
-                LabeledContent("Notes folder") {
-                    Text(store.notesDirectory.path)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .foregroundStyle(.secondary)
-                }
-                Button("Reveal in Finder") { store.revealInFinder() }
-            }
         }
         .formStyle(.grouped)
         .frame(width: 440)
         .fixedSize()
         .onAppear {
             launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
+    }
+
+    private func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.prompt = "Choose"
+        panel.message = "Choose a folder for your notes"
+        panel.directoryURL = store.notesDirectory
+        if panel.runModal() == .OK, let url = panel.url {
+            store.setNotesDirectory(url)
         }
     }
 

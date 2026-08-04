@@ -29,7 +29,6 @@
 		555F136BDD968F632DF3D8D6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6546BDEE8AC00AB41E8E78AD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8EF2902EC1A9A4C6050E4514 /* MarkdownEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownEditor.swift; sourceTree = "<group>"; };
-		9C31CFD340346A967AAC47CC /* NeoNotes-local.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "NeoNotes-local.entitlements"; sourceTree = "<group>"; };
 		A19D40125FAB93B0ADF6705F /* MarkdownHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownHighlighter.swift; sourceTree = "<group>"; };
 		B27FB39647CA8070112C6387 /* NoteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteStore.swift; sourceTree = "<group>"; };
 		B48A3315529DE4DB92424783 /* NeoNotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeoNotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,7 +69,6 @@
 			children = (
 				555F136BDD968F632DF3D8D6 /* Assets.xcassets */,
 				6546BDEE8AC00AB41E8E78AD /* Info.plist */,
-				9C31CFD340346A967AAC47CC /* NeoNotes-local.entitlements */,
 				D495C7F37C88AEEC0CCC31AA /* NeoNotes.entitlements */,
 				0DC86CD51C534F41C19097CD /* NeoNotesApp.swift */,
 				BF5CF57BD7F20A3E7F69AECE /* Models */,

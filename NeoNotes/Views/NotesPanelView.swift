@@ -207,13 +207,6 @@ struct NotesPanelView: View {
                 dotsWidth = width
             }
 
-            if store.useICloud && store.iCloudAvailable {
-                Image(systemName: "icloud")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .help("Synced with iCloud")
-            }
-
             if store.selectedNote != nil {
                 Button {
                     isPreviewing.toggle()
