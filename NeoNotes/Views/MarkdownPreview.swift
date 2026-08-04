@@ -200,7 +200,9 @@ private enum MarkdownRenderer {
         for (index, block) in blocks.enumerated() {
             result.append(render(block))
             if index < blocks.count - 1 {
-                result.append(NSAttributedString(string: "\n"))
+                result.append(NSAttributedString(string: "\n", attributes: [
+                    .font: NSFont.systemFont(ofSize: fontSize),
+                ]))
             }
         }
         return result
@@ -275,6 +277,9 @@ private enum MarkdownRenderer {
                 range: NSRange(location: 0, length: item.length)
             )
             return item
+
+        case .blank:
+            return NSAttributedString()
 
         case .rule:
             return NSAttributedString(
@@ -376,6 +381,7 @@ private enum MarkdownRenderer {
         case listItem(marker: String, text: String)
         case task(done: Bool, text: String, line: Int)
         case rule
+        case blank
     }
 
     private static let headingRegex = try! NSRegularExpression(pattern: "^(#{1,6})\\s+(.*)$")
@@ -436,6 +442,7 @@ private enum MarkdownRenderer {
             if trimmed.isEmpty {
                 flushParagraph()
                 flushQuote()
+                blocks.append(.blank)
                 continue
             }
             if trimmed.hasPrefix(">") {
