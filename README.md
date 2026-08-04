@@ -40,6 +40,14 @@ The project is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen) 
 
 Notes are stored as plain markdown files — by default in `~/Library/Application Support/NeoNotes/Notes`, or any folder you pick in Settings. Existing `.md` files in the chosen folder are loaded automatically.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
-MIT © [Jovanni Lo (@lodev09)](https://github.com/lodev09)
+[MIT](LICENSE)
+
+---
+
+Made with ❤️ by [@lodev09](http://linkedin.com/in/lodev09/)
