@@ -2,7 +2,7 @@
 
 Markdown notes in your macOS menu bar — always one click away.
 
-<img alt="NeoNotes" src="preview.gif" height="500" />
+<img alt="NeoNotes" src="preview.png" height="500" />
 
 ## Features
 
