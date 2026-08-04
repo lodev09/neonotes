@@ -295,7 +295,7 @@ private enum MarkdownRenderer {
             let heading = NSMutableAttributedString(attributedString: inline(text, font: .systemFont(ofSize: size, weight: weight)))
             heading.addAttribute(
                 .paragraphStyle,
-                value: style(before: level <= 2 ? 8 : 4),
+                value: style(before: level <= 2 ? 8 : 4, after: 0),
                 range: NSRange(location: 0, length: heading.length)
             )
             return heading
