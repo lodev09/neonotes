@@ -286,7 +286,8 @@ struct NotesPanelView: View {
     }
 
     private var statsText: String {
-        "\(store.selectedNote?.wordCount ?? 0) words"
+        guard let note = store.selectedNote else { return "" }
+        return "\(note.id).md · \(note.wordCount) words"
     }
 
     private var deleteConfirmBar: some View {
