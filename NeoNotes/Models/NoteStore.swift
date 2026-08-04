@@ -132,7 +132,11 @@ final class NoteStore: ObservableObject {
         guard !pendingSaves.isEmpty else { return }
         for id in pendingSaves {
             guard let note = notes.first(where: { $0.id == id }) else { continue }
-            try? note.content.write(to: fileURL(for: id), atomically: true, encoding: .utf8)
+            let url = fileURL(for: id)
+            try? note.content.write(to: url, atomically: true, encoding: .utf8)
+            // Atomic writes replace the file, resetting the creation date
+            // that reload() sorts by
+            try? FileManager.default.setAttributes([.creationDate: note.createdAt], ofItemAtPath: url.path)
         }
         pendingSaves.removeAll()
     }
