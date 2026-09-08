@@ -150,36 +150,41 @@ struct NotesPanelView: View {
     private var header: some View {
         HStack(spacing: 4) {
             HoverChrome {
-                Menu {
-                    ForEach(store.notes) { note in
-                        Button {
-                            store.selectedID = note.id
-                        } label: {
-                            if note.id == store.selectedID {
-                                Label(note.title, systemImage: "checkmark")
-                            } else {
-                                Text(note.title)
+                // Menu labels don't compress, so the title lives outside
+                // and the Menu is a transparent hit layer on top
+                HStack(spacing: 6) {
+                    Text(store.selectedNote?.title ?? "NeoNotes")
+                        .font(.system(size: 14, weight: .semibold))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 8)
+                .overlay {
+                    Menu {
+                        ForEach(store.notes) { note in
+                            Button {
+                                store.selectedID = note.id
+                            } label: {
+                                if note.id == store.selectedID {
+                                    Label(note.title, systemImage: "checkmark")
+                                } else {
+                                    Text(note.title)
+                                }
                             }
                         }
+                    } label: {
+                        Color.clear.contentShape(Rectangle())
                     }
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(store.selectedNote?.title ?? "NeoNotes")
-                            .font(.system(size: 14, weight: .semibold))
-                            .lineLimit(1)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, 8)
+                    .menuStyle(.button)
+                    .buttonStyle(.plain)
+                    .menuIndicator(.hidden)
                 }
-                .menuStyle(.button)
-                .buttonStyle(.plain)
-                .menuIndicator(.hidden)
-                .fixedSize()
             }
 
-            Spacer()
+            Spacer(minLength: 0)
 
             Button {
                 store.createNote()
@@ -219,7 +224,7 @@ struct NotesPanelView: View {
         let dotSize = dotSize(available: dotsWidth)
         return HStack(spacing: 8) {
             // Dots shrink to fit their space; controls keep their size
-            HStack(spacing: 6) {
+            HStack(spacing: 0) {
                 ForEach(store.notes) { note in
                     noteDot(note, size: dotSize)
                 }
@@ -335,8 +340,8 @@ struct NotesPanelView: View {
     private func dotSize(available: CGFloat) -> CGFloat {
         let count = CGFloat(max(store.notes.count, 1))
         guard available > 0 else { return 13 }
-        // n dots at (s + 6pt hit padding), 6pt gaps, selected one stretches by 1.15s
-        let fitted = (available - 12 * count + 6) / (count + 1.15)
+        // n dots at (s + 12pt hit padding), selected one stretches by 1.15s
+        let fitted = (available - 12 * count) / (count + 1.15)
         return min(13, max(5, fitted))
     }
 
@@ -351,9 +356,11 @@ struct NotesPanelView: View {
             colorMenuItems(for: note)
         } label: {
             Capsule()
-                .fill(store.color(for: note.id).opacity(isSelected ? 1 : 0.45))
+                .fill(store.color(for: note.id))
                 .frame(width: width, height: height)
-                .padding(3)
+                .padding(.horizontal, 6)
+                .frame(height: 25)
+                .contentShape(Rectangle())
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
