@@ -55,6 +55,8 @@ struct NotesPanelView: View {
     @State private var contentUnderFooter = false
     @State private var isPreviewing = false
     @State private var confirmingDelete = false
+    @State private var dragStartIndex: Int?
+    @State private var draggingID: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -76,6 +78,8 @@ struct NotesPanelView: View {
                         noteID: store.selectedID ?? "",
                         bottomInset: footerHeight,
                         stats: statsText,
+                        fileName: fileName,
+                        onRevealFile: { store.revealSelectedInFinder() },
                         onFooterOcclusionChange: { contentUnderFooter = $0 }
                     )
                 }
@@ -275,6 +279,8 @@ struct NotesPanelView: View {
 
         }
         .animation(.spring(duration: 0.25), value: store.selectedID)
+        .animation(.spring(duration: 0.25), value: store.notes.map(\.id))
+        .animation(.spring(duration: 0.2, bounce: 0.3), value: draggingID)
         .onChange(of: store.selectedID) { _, _ in
             confirmingDelete = false
         }
@@ -290,9 +296,13 @@ struct NotesPanelView: View {
         }
     }
 
+    private var fileName: String {
+        store.selectedNote.map { "\($0.id).md" } ?? ""
+    }
+
     private var statsText: String {
         guard let note = store.selectedNote else { return "" }
-        return "\(note.id).md · \(note.wordCount) words"
+        return "\(fileName) · \(note.wordCount) words"
     }
 
     private var deleteConfirmBar: some View {
@@ -348,55 +358,149 @@ struct NotesPanelView: View {
     private func noteDot(_ note: Note, size: CGFloat) -> some View {
         let isSelected = note.id == store.selectedID
         let height = size
-        let width: CGFloat = isSelected ? ceil(size * 2.15) : size
+        let width = pillWidth(note, size: size)
 
-        // A single stable view per note: swapping Button/Menu on selection
-        // makes SwiftUI crossfade instead of animating the resize.
-        return Menu {
-            colorMenuItems(for: note)
-        } label: {
-            Capsule()
-                .fill(store.color(for: note.id))
-                .frame(width: width, height: height)
-                .padding(.horizontal, 6)
-                .frame(height: 25)
-                .contentShape(Rectangle())
-        }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .overlay {
-            // Unselected: intercept the click to select instead of opening the menu
-            if !isSelected {
-                Button {
-                    store.selectedID = note.id
-                } label: {
-                    Color.clear.contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+        // Same view tree whether selected or not, so SwiftUI animates the
+        // resize instead of crossfading. Clicks/drags go to an AppKit view:
+        // a SwiftUI Menu opens on mouse-down and would swallow the drag.
+        return Capsule()
+            .fill(store.color(for: note.id))
+            .frame(width: width, height: height)
+            .scaleEffect(draggingID == note.id ? 1.3 : 1)
+            .padding(.horizontal, 6)
+            .frame(height: 25)
+            .zIndex(draggingID == note.id ? 1 : 0)
+            .overlay {
+                DotHitArea(
+                    toolTip: isSelected ? "\(note.title) — Note Color · Drag to Reorder" : note.title,
+                    onClick: { store.selectedID = note.id },
+                    menu: isSelected ? { colorMenu(for: note) } : nil,
+                    onPress: { draggingID = note.id },
+                    onDrag: { dragDot(note, by: $0, size: size) },
+                    onRelease: {
+                        dragStartIndex = nil
+                        draggingID = nil
+                    }
+                )
             }
-        }
-        .help(isSelected ? "\(note.title) — Note Color" : note.title)
     }
 
-    @ViewBuilder
-    private func colorMenuItems(for note: Note) -> some View {
-        ForEach(NoteStore.palette, id: \.hex) { entry in
-            Button(entry.name) {
-                store.setColorHex(entry.hex, for: note.id)
-            }
+    private func pillWidth(_ note: Note, size: CGFloat) -> CGFloat {
+        note.id == store.selectedID ? ceil(size * 2.15) : size
+    }
+
+    /// Pill plus its 6pt hit padding on each side
+    private func dotWidth(_ note: Note, size: CGFloat) -> CGFloat {
+        pillWidth(note, size: size) + 12
+    }
+
+    private func dragDot(_ note: Note, by dx: CGFloat, size: CGFloat) {
+        if dragStartIndex == nil { dragStartIndex = store.notes.firstIndex { $0.id == note.id } }
+        guard let start = dragStartIndex else { return }
+        // The other dots keep their relative order during the drag, so
+        // measure against them: drop where the dragged dot's center lands
+        let others = store.notes.filter { $0.id != note.id }
+        let leading = others.prefix(start).reduce(0) { $0 + dotWidth($1, size: size) }
+        let center = leading + dx + dotWidth(note, size: size) / 2
+        var target = 0
+        var x: CGFloat = 0
+        for other in others {
+            let width = dotWidth(other, size: size)
+            if x + width / 2 < center { target += 1 }
+            x += width
         }
-        Divider()
-        Button("Custom…") {
+        store.moveNote(note.id, to: target)
+    }
+
+    private func colorMenu(for note: Note) -> NSMenu {
+        let menu = NSMenu()
+        for entry in NoteStore.palette {
+            menu.addItem(ClosureMenuItem(entry.name) { store.setColorHex(entry.hex, for: note.id) })
+        }
+        menu.addItem(.separator())
+        menu.addItem(ClosureMenuItem("Custom…") {
             ColorPanelBridge.shared.present(initial: store.nsColor(for: note.id)) { picked in
                 if let hex = picked.hexString {
                     store.setColorHex(hex, for: note.id)
                 }
             }
-        }
-        Button("Auto") {
-            store.setColorHex(nil, for: note.id)
+        })
+        menu.addItem(ClosureMenuItem("Auto") { store.setColorHex(nil, for: note.id) })
+        return menu
+    }
+}
+
+final class ClosureMenuItem: NSMenuItem {
+    private let handler: () -> Void
+
+    init(_ title: String, handler: @escaping () -> Void) {
+        self.handler = handler
+        super.init(title: title, action: #selector(fire), keyEquivalent: "")
+        target = self
+    }
+
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    @objc private func fire() { handler() }
+}
+
+/// Transparent hit target: click selects or pops the menu, horizontal drag reports its delta.
+struct DotHitArea: NSViewRepresentable {
+    var toolTip: String
+    var onClick: () -> Void
+    var menu: (() -> NSMenu)?
+    var onPress: () -> Void
+    var onDrag: ((CGFloat) -> Void)?
+    var onRelease: () -> Void
+
+    func makeNSView(context: Context) -> DotHitView {
+        DotHitView()
+    }
+
+    func updateNSView(_ view: DotHitView, context: Context) {
+        view.toolTip = toolTip
+        view.onClick = onClick
+        view.makeMenu = menu
+        view.onPress = onPress
+        view.onDrag = onDrag
+        view.onRelease = onRelease
+    }
+}
+
+final class DotHitView: NSView {
+    var onClick: () -> Void = {}
+    var makeMenu: (() -> NSMenu)?
+    var onPress: () -> Void = {}
+    var onDrag: ((CGFloat) -> Void)?
+    var onRelease: () -> Void = {}
+
+    private var dragStartX: CGFloat?
+    private var dragging = false
+
+    override func mouseDown(with event: NSEvent) {
+        dragStartX = event.locationInWindow.x
+        dragging = false
+        onPress()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let onDrag, let dragStartX else { return }
+        let dx = event.locationInWindow.x - dragStartX
+        if !dragging, abs(dx) < 4 { return }
+        dragging = true
+        onDrag(dx)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        defer { dragStartX = nil; dragging = false }
+        onRelease()
+        guard !dragging else { return }
+        if let makeMenu {
+            makeMenu().popUp(positioning: nil, at: NSPoint(x: 0, y: bounds.height + 4), in: self)
+        } else {
+            onClick()
         }
     }
 }

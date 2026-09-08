@@ -6,9 +6,17 @@ final class StatsTextView: NSTextView {
     private static let statsGap: CGFloat = 12
     private static let statsHeight: CGFloat = 14
 
+    private static let statsAttributes: [NSAttributedString.Key: Any] = [
+        .font: NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .regular),
+        .foregroundColor: NSColor.tertiaryLabelColor,
+    ]
+
     var statsText: String = "" {
         didSet { if statsText != oldValue { needsDisplay = true } }
     }
+    /// Leading part of `statsText`; ⌘-click on it calls `onRevealFile`
+    var fileName: String = ""
+    var onRevealFile: (() -> Void)?
 
     override func didChangeText() {
         super.didChangeText()
@@ -30,8 +38,12 @@ final class StatsTextView: NSTextView {
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        if event.modifierFlags.contains(.command), openLink(at: point) {
-            return
+        if event.modifierFlags.contains(.command) {
+            if fileNameRect()?.contains(point) == true {
+                onRevealFile?()
+                return
+            }
+            if openLink(at: point) { return }
         }
         if event.clickCount == 1, toggleTaskBox(at: point) {
             return
@@ -117,7 +129,8 @@ final class StatsTextView: NSTextView {
     private func refreshLinkCursor() -> Bool {
         guard let window, NSEvent.modifierFlags.contains(.command) else { return false }
         let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
-        guard visibleRect.contains(point), link(at: point) != nil else { return false }
+        guard visibleRect.contains(point),
+              fileNameRect()?.contains(point) == true || link(at: point) != nil else { return false }
         NSCursor.pointingHand.set()
         return true
     }
@@ -153,21 +166,25 @@ final class StatsTextView: NSTextView {
         return true
     }
 
+    private func statsOrigin() -> NSPoint? {
+        guard !statsText.isEmpty, let layoutManager, let textContainer else { return nil }
+        let used = layoutManager.usedRect(for: textContainer)
+        return NSPoint(
+            x: textContainerOrigin.x + textContainer.lineFragmentPadding,
+            y: textContainerOrigin.y + used.maxY + Self.statsGap
+        )
+    }
+
+    private func fileNameRect() -> NSRect? {
+        guard !fileName.isEmpty, let origin = statsOrigin() else { return nil }
+        let size = (fileName as NSString).size(withAttributes: Self.statsAttributes)
+        return NSRect(origin: origin, size: size).insetBy(dx: -2, dy: -2)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard !statsText.isEmpty, let layoutManager, let textContainer else { return }
-        let used = layoutManager.usedRect(for: textContainer)
-        let origin = textContainerOrigin
-        (statsText as NSString).draw(
-            at: NSPoint(
-                x: origin.x + textContainer.lineFragmentPadding,
-                y: origin.y + used.maxY + Self.statsGap
-            ),
-            withAttributes: [
-                .font: NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .regular),
-                .foregroundColor: NSColor.tertiaryLabelColor,
-            ]
-        )
+        guard let origin = statsOrigin() else { return }
+        (statsText as NSString).draw(at: origin, withAttributes: Self.statsAttributes)
     }
 }
 
@@ -179,6 +196,8 @@ struct MarkdownEditor: NSViewRepresentable {
     var noteID: String
     var bottomInset: CGFloat = 0
     var stats: String = ""
+    var fileName: String = ""
+    var onRevealFile: (() -> Void)?
     var onFooterOcclusionChange: ((Bool) -> Void)?
 
     func makeCoordinator() -> Coordinator {
@@ -189,6 +208,8 @@ struct MarkdownEditor: NSViewRepresentable {
         let scrollView = StatsTextView.scrollableTextView()
         let textView = scrollView.documentView as! StatsTextView
         textView.statsText = stats
+        textView.fileName = fileName
+        textView.onRevealFile = onRevealFile
 
         textView.delegate = context.coordinator
         textView.isRichText = false
@@ -235,6 +256,8 @@ struct MarkdownEditor: NSViewRepresentable {
         context.coordinator.parent = self
         guard let textView = scrollView.documentView as? StatsTextView else { return }
         textView.statsText = stats
+        textView.fileName = fileName
+        textView.onRevealFile = onRevealFile
 
         if scrollView.contentInsets.bottom != bottomInset {
             scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)

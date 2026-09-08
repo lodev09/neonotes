@@ -6,6 +6,7 @@ import SwiftUI
 final class NoteStore: ObservableObject {
     private static let folderBookmarkKey = "notesFolderBookmark"
     private static let noteColorsKey = "noteColors"
+    private static let noteOrderKey = "noteOrder"
 
     static let palette: [(name: String, hex: String)] = [
         ("Red", "D97366"),
@@ -26,6 +27,8 @@ final class NoteStore: ObservableObject {
         UserDefaults.standard.dictionary(forKey: NoteStore.noteColorsKey) as? [String: String] ?? [:]
     /// User-chosen folder (security-scoped); nil means the default location.
     @Published private(set) var customNotesURL: URL?
+    /// Empty until the user reorders; notes then follow this instead of creation date.
+    private var noteOrder: [String] = UserDefaults.standard.stringArray(forKey: NoteStore.noteOrderKey) ?? []
 
     private let defaultNotesURL: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -100,6 +103,12 @@ final class NoteStore: ObservableObject {
         notes = loaded.sorted {
             $0.createdAt != $1.createdAt ? $0.createdAt < $1.createdAt : $0.id < $1.id
         }
+        if !noteOrder.isEmpty {
+            // Saved order first; notes it doesn't know (new or added externally) keep date order after
+            let rank = Dictionary(noteOrder.enumerated().map { ($1, $0) }, uniquingKeysWith: { a, _ in a })
+            let known = notes.filter { rank[$0.id] != nil }.sorted { rank[$0.id]! < rank[$1.id]! }
+            notes = known + notes.filter { rank[$0.id] == nil }
+        }
 
         if notes.isEmpty {
             createNote(content: Self.welcomeContent)
@@ -173,6 +182,7 @@ final class NoteStore: ObservableObject {
         try? content.write(to: fileURL(for: id), atomically: true, encoding: .utf8)
         setColorHex(Self.palette[notes.count % Self.palette.count].hex, for: id)
         notes.append(note)
+        if !noteOrder.isEmpty { saveOrder() }
         selectedID = id
         return note
     }
@@ -188,11 +198,24 @@ final class NoteStore: ObservableObject {
         catch { try? FileManager.default.removeItem(at: url) }
 
         notes.remove(at: index)
+        if !noteOrder.isEmpty { saveOrder() }
         if notes.isEmpty {
             createNote()
         } else {
             selectedID = notes[min(index, notes.count - 1)].id
         }
+    }
+
+    func moveNote(_ id: String, to target: Int) {
+        guard let index = notes.firstIndex(where: { $0.id == id }),
+              notes.indices.contains(target), index != target else { return }
+        notes.insert(notes.remove(at: index), at: target)
+        saveOrder()
+    }
+
+    private func saveOrder() {
+        noteOrder = notes.map(\.id)
+        UserDefaults.standard.set(noteOrder, forKey: Self.noteOrderKey)
     }
 
     func selectRelative(_ offset: Int) {
