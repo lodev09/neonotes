@@ -179,6 +179,8 @@ struct NotesPanelView: View {
                                 }
                             }
                         }
+                        Divider()
+                        Button("New Note") { store.createNote() }
                     } label: {
                         Color.clear.contentShape(Rectangle())
                     }
@@ -193,34 +195,37 @@ struct NotesPanelView: View {
             Button {
                 store.createNote()
             } label: {
-                Image(systemName: "square.and.pencil")
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .medium))
             }
             .buttonStyle(IconButtonStyle())
             .keyboardShortcut("n", modifiers: .command)
             .help("New Note (⌘N)")
+        }
+    }
 
-            HoverChrome {
-                Menu {
-                    Button("About NeoNotes") {
-                        NSApp.activate(ignoringOtherApps: true)
-                        openWindow(id: "about")
-                    }
-                    Button("Settings") { openAppSettings() }
-                        .keyboardShortcut(",", modifiers: .command)
-                    Divider()
-                    Button("Quit NeoNotes") { NSApp.terminate(nil) }
-                        .keyboardShortcut("q", modifiers: .command)
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 25, height: 25)
+    private var settingsMenu: some View {
+        HoverChrome {
+            Menu {
+                Button("About NeoNotes") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: "about")
                 }
-                .menuStyle(.button)
-                .buttonStyle(.plain)
-                .menuIndicator(.hidden)
-                .fixedSize()
+                Button("Settings") { openAppSettings() }
+                    .keyboardShortcut(",", modifiers: .command)
+                Divider()
+                Button("Quit NeoNotes") { NSApp.terminate(nil) }
+                    .keyboardShortcut("q", modifiers: .command)
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 25, height: 25)
             }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
         }
     }
 
@@ -277,6 +282,10 @@ struct NotesPanelView: View {
                 .help("Delete Note")
             }
 
+            Divider()
+                .frame(height: 16)
+
+            settingsMenu
         }
         .animation(.spring(duration: 0.25), value: store.selectedID)
         .animation(.spring(duration: 0.25), value: store.notes.map(\.id))
