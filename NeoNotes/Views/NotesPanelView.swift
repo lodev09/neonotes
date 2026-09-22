@@ -88,7 +88,7 @@ struct NotesPanelView: View {
             Divider()
             footer
                 .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.vertical, 8)
         }
         .frame(width: panelWidth, height: panelHeight)
         .overlay {

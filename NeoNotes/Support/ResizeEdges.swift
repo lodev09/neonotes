@@ -11,8 +11,8 @@ struct ResizeEdges: View {
 
     @State private var startSize: CGSize?
 
-    private static let edgeGrip: CGFloat = 6
-    private static let cornerGrip: CGFloat = 14
+    private static let edgeGrip: CGFloat = 8
+    private static let cornerGrip: CGFloat = 20
 
     var body: some View {
         Color.clear
