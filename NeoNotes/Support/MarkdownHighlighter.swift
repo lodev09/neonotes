@@ -15,6 +15,10 @@ enum MarkdownHighlighter {
         CGFloat(UserDefaults.standard.object(forKey: key) as? Double ?? fallback)
     }
 
+    /// Syntax markers and metadata. Tertiary label is too faint over the
+    /// window's glass, so muted text uses the secondary level.
+    static let mutedColor = NSColor.secondaryLabelColor
+
     static var baseFont: NSFont { .systemFont(ofSize: fontSize) }
     static var monoFont: NSFont { .monospacedSystemFont(ofSize: fontSize - 1, weight: .regular) }
 
@@ -84,7 +88,7 @@ enum MarkdownHighlighter {
         heading.enumerateMatches(in: storage.string, range: full) { match, _, _ in
             guard let match else { return }
             storage.addAttribute(.font, value: headingFont(level: match.range(at: 1).length), range: match.range)
-            storage.addAttribute(.foregroundColor, value: NSColor.tertiaryLabelColor, range: match.range(at: 1))
+            storage.addAttribute(.foregroundColor, value: mutedColor, range: match.range(at: 1))
         }
 
         blockquote.enumerateMatches(in: storage.string, range: full) { match, _, _ in
@@ -107,7 +111,7 @@ enum MarkdownHighlighter {
 
         horizontalRule.enumerateMatches(in: storage.string, range: full) { match, _, _ in
             guard let match else { return }
-            storage.addAttribute(.foregroundColor, value: NSColor.tertiaryLabelColor, range: match.range)
+            storage.addAttribute(.foregroundColor, value: mutedColor, range: match.range)
         }
 
         bold.enumerateMatches(in: storage.string, range: full) { match, _, _ in
@@ -138,7 +142,7 @@ enum MarkdownHighlighter {
 
         link.enumerateMatches(in: storage.string, range: full) { match, _, _ in
             guard let match else { return }
-            storage.addAttribute(.foregroundColor, value: NSColor.tertiaryLabelColor, range: match.range)
+            storage.addAttribute(.foregroundColor, value: mutedColor, range: match.range)
             storage.addAttribute(.foregroundColor, value: NSColor.linkColor, range: match.range(at: 1))
         }
 
@@ -147,7 +151,6 @@ enum MarkdownHighlighter {
             storage.addAttributes([
                 .font: monoFont,
                 .foregroundColor: NSColor.systemPink,
-                .backgroundColor: NSColor.labelColor.withAlphaComponent(0.06),
             ], range: match.range)
         }
 
@@ -155,7 +158,7 @@ enum MarkdownHighlighter {
             guard let match else { return }
             storage.setAttributes([
                 .font: monoFont,
-                .foregroundColor: NSColor.secondaryLabelColor,
+                .foregroundColor: NSColor.labelColor,
                 .paragraphStyle: paragraphStyle,
             ], range: match.range)
         }
@@ -168,7 +171,7 @@ enum MarkdownHighlighter {
         guard range.length > markerLength * 2 else { return }
         let opening = NSRange(location: range.location, length: markerLength)
         let closing = NSRange(location: range.location + range.length - markerLength, length: markerLength)
-        storage.addAttribute(.foregroundColor, value: NSColor.tertiaryLabelColor, range: opening)
-        storage.addAttribute(.foregroundColor, value: NSColor.tertiaryLabelColor, range: closing)
+        storage.addAttribute(.foregroundColor, value: mutedColor, range: opening)
+        storage.addAttribute(.foregroundColor, value: mutedColor, range: closing)
     }
 }

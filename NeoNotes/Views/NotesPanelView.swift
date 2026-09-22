@@ -50,9 +50,7 @@ struct NotesPanelView: View {
     @Environment(\.openWindow) private var openWindow
     @AppStorage("panelWidth") private var panelWidth = 460.0
     @AppStorage("panelHeight") private var panelHeight = 580.0
-    @State private var footerHeight: CGFloat = 40
     @State private var dotsWidth: CGFloat = 0
-    @State private var contentUnderFooter = false
     @State private var isPreviewing = false
     @State private var confirmingDelete = false
     @State private var dragStartIndex: Int?
@@ -61,53 +59,36 @@ struct NotesPanelView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .padding(8)
             Divider()
             Group {
                 if isPreviewing {
                     MarkdownPreview(
                         text: store.selectedNote?.content ?? "",
-                        bottomInset: footerHeight,
-                        onFooterOcclusionChange: { contentUnderFooter = $0 },
                         onToggleTask: { toggleTask(atLine: $0) }
                     )
                 } else {
                     MarkdownEditor(
                         text: contentBinding,
                         noteID: store.selectedID ?? "",
-                        bottomInset: footerHeight,
                         stats: statsText,
                         fileName: fileName,
-                        onRevealFile: { store.revealSelectedInFinder() },
-                        onFooterOcclusionChange: { contentUnderFooter = $0 }
+                        onRevealFile: { store.revealSelectedInFinder() }
                     )
                 }
             }
             .overlay(alignment: .bottom) {
-                footer
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background {
-                        Rectangle()
-                            .fill(.ultraThinMaterial)
-                            .opacity(contentUnderFooter ? 1 : 0)
-                            .animation(.easeInOut(duration: 0.15), value: contentUnderFooter)
-                    }
-                    .onGeometryChange(for: CGFloat.self) { proxy in
-                        proxy.size.height
-                    } action: { height in
-                        footerHeight = height
-                    }
-            }
-            .overlay(alignment: .bottom) {
                 if confirmingDelete {
                     deleteConfirmBar
-                        .padding(.bottom, footerHeight + 8)
+                        .padding(.bottom, 8)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .animation(.spring(duration: 0.3, bounce: 0.15), value: confirmingDelete)
+            Divider()
+            footer
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
         }
         .frame(width: panelWidth, height: panelHeight)
         .overlay {
@@ -192,6 +173,25 @@ struct NotesPanelView: View {
 
             Spacer(minLength: 0)
 
+            newNoteButton
+                .keyboardShortcut("n", modifiers: .command)
+                .help("New Note (⌘N)")
+        }
+    }
+
+    @ViewBuilder
+    private var newNoteButton: some View {
+        if #available(macOS 26, *) {
+            Button {
+                store.createNote()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(width: 22, height: 22)
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+        } else {
             Button {
                 store.createNote()
             } label: {
@@ -199,8 +199,6 @@ struct NotesPanelView: View {
                     .font(.system(size: 18, weight: .medium))
             }
             .buttonStyle(IconButtonStyle())
-            .keyboardShortcut("n", modifiers: .command)
-            .help("New Note (⌘N)")
         }
     }
 

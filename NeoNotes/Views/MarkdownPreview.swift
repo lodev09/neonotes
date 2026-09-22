@@ -148,8 +148,6 @@ struct MarkdownPreview: NSViewRepresentable {
     @AppStorage(MarkdownHighlighter.lineSpacingKey) private var lineSpacing = MarkdownHighlighter.defaultLineSpacing
 
     let text: String
-    var bottomInset: CGFloat = 0
-    var onFooterOcclusionChange: ((Bool) -> Void)?
     var onToggleTask: ((_ lineIndex: Int) -> Void)?
 
     func makeCoordinator() -> Coordinator {
@@ -188,37 +186,16 @@ struct MarkdownPreview: NSViewRepresentable {
         scrollView.drawsBackground = false
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
-        scrollView.automaticallyAdjustsContentInsets = false
-        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
 
         storage.setAttributedString(MarkdownRenderer.render(text))
         context.coordinator.textView = textView
         context.coordinator.renderedText = text
-
-        scrollView.contentView.postsBoundsChangedNotifications = true
-        textView.postsFrameChangedNotifications = true
-        NotificationCenter.default.addObserver(
-            context.coordinator,
-            selector: #selector(Coordinator.layoutChanged),
-            name: NSView.boundsDidChangeNotification,
-            object: scrollView.contentView
-        )
-        NotificationCenter.default.addObserver(
-            context.coordinator,
-            selector: #selector(Coordinator.layoutChanged),
-            name: NSView.frameDidChangeNotification,
-            object: textView
-        )
         return scrollView
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         context.coordinator.parent = self
         guard let textView = scrollView.documentView as? PreviewTextView else { return }
-
-        if scrollView.contentInsets.bottom != bottomInset {
-            scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
-        }
 
         if context.coordinator.fontSize != fontSize || context.coordinator.lineSpacing != lineSpacing {
             context.coordinator.fontSize = fontSize
@@ -238,9 +215,6 @@ struct MarkdownPreview: NSViewRepresentable {
             textView.needsDisplay = true
             textView.scroll(visibleOrigin)
         }
-        DispatchQueue.main.async {
-            context.coordinator.updateFooterOcclusion()
-        }
     }
 
     final class Coordinator: NSObject {
@@ -249,30 +223,9 @@ struct MarkdownPreview: NSViewRepresentable {
         var renderedText: String?
         var fontSize = MarkdownHighlighter.defaultFontSize
         var lineSpacing = MarkdownHighlighter.defaultLineSpacing
-        private var contentUnderFooter = false
 
         init(_ parent: MarkdownPreview) {
             self.parent = parent
-        }
-
-        @objc func layoutChanged() {
-            updateFooterOcclusion()
-        }
-
-        func updateFooterOcclusion() {
-            guard let textView, let scrollView = textView.enclosingScrollView else { return }
-            let clip = scrollView.contentView
-            let visibleBottom = clip.bounds.origin.y + clip.bounds.height
-            let under = textView.frame.height - (visibleBottom - parent.bottomInset) > 1
-            if under != contentUnderFooter {
-                contentUnderFooter = under
-                let callback = parent.onFooterOcclusionChange
-                DispatchQueue.main.async { callback?(under) }
-            }
-        }
-
-        deinit {
-            NotificationCenter.default.removeObserver(self)
         }
     }
 }
@@ -526,7 +479,6 @@ private enum MarkdownRenderer {
             if intent.contains(.code) {
                 attributes[.font] = NSFont.monospacedSystemFont(ofSize: baseFont.pointSize - 1, weight: .regular)
                 attributes[.foregroundColor] = NSColor.systemPink
-                attributes[.backgroundColor] = NSColor.textBackgroundColor.withAlphaComponent(0.55)
             } else if intent.contains(.stronglyEmphasized) {
                 attributes[.font] = NSFont.systemFont(ofSize: baseFont.pointSize, weight: .semibold)
             }

@@ -8,7 +8,7 @@ final class StatsTextView: NSTextView {
 
     private static let statsAttributes: [NSAttributedString.Key: Any] = [
         .font: NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .regular),
-        .foregroundColor: NSColor.tertiaryLabelColor,
+        .foregroundColor: MarkdownHighlighter.mutedColor,
     ]
 
     var statsText: String = "" {
@@ -194,11 +194,9 @@ struct MarkdownEditor: NSViewRepresentable {
 
     @Binding var text: String
     var noteID: String
-    var bottomInset: CGFloat = 0
     var stats: String = ""
     var fileName: String = ""
     var onRevealFile: (() -> Void)?
-    var onFooterOcclusionChange: ((Bool) -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -226,29 +224,12 @@ struct MarkdownEditor: NSViewRepresentable {
         scrollView.drawsBackground = false
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
-        scrollView.automaticallyAdjustsContentInsets = false
-        scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
 
         textView.string = text
         if let storage = textView.textStorage {
             MarkdownHighlighter.highlight(storage)
         }
         context.coordinator.textView = textView
-
-        scrollView.contentView.postsBoundsChangedNotifications = true
-        textView.postsFrameChangedNotifications = true
-        NotificationCenter.default.addObserver(
-            context.coordinator,
-            selector: #selector(Coordinator.layoutChanged),
-            name: NSView.boundsDidChangeNotification,
-            object: scrollView.contentView
-        )
-        NotificationCenter.default.addObserver(
-            context.coordinator,
-            selector: #selector(Coordinator.layoutChanged),
-            name: NSView.frameDidChangeNotification,
-            object: textView
-        )
         return scrollView
     }
 
@@ -258,10 +239,6 @@ struct MarkdownEditor: NSViewRepresentable {
         textView.statsText = stats
         textView.fileName = fileName
         textView.onRevealFile = onRevealFile
-
-        if scrollView.contentInsets.bottom != bottomInset {
-            scrollView.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
-        }
 
         if context.coordinator.fontSize != fontSize || context.coordinator.lineSpacing != lineSpacing {
             context.coordinator.fontSize = fontSize
@@ -295,9 +272,6 @@ struct MarkdownEditor: NSViewRepresentable {
         if textView.window != nil, !context.coordinator.didFocus {
             context.coordinator.didFocus = true
             textView.window?.makeFirstResponder(textView)
-        }
-        DispatchQueue.main.async {
-            context.coordinator.updateFooterOcclusion()
         }
     }
 
@@ -385,27 +359,6 @@ struct MarkdownEditor: NSViewRepresentable {
 
         func undoManager(for view: NSTextView) -> UndoManager? {
             editorUndoManager
-        }
-
-        @objc func layoutChanged() {
-            updateFooterOcclusion()
-        }
-
-        func updateFooterOcclusion() {
-            guard let textView, let scrollView = textView.enclosingScrollView else { return }
-            let clip = scrollView.contentView
-            let visibleBottom = clip.bounds.origin.y + clip.bounds.height
-            let under = textView.frame.height - (visibleBottom - parent.bottomInset) > 1
-            if under != contentUnderFooter {
-                contentUnderFooter = under
-                let callback = parent.onFooterOcclusionChange
-                DispatchQueue.main.async { callback?(under) }
-            }
-        }
-        private var contentUnderFooter = false
-
-        deinit {
-            NotificationCenter.default.removeObserver(self)
         }
     }
 }
