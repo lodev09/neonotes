@@ -41,6 +41,27 @@ enum MarkdownSyntax {
         return ns.replacingCharacters(in: markRange, with: mark)
     }
 
+    static let listIndent = "  "
+
+    /// Nesting depth from leading whitespace; a tab counts as one level.
+    static func listLevel(of line: String) -> Int {
+        var width = 0
+        for char in line {
+            if char == " " { width += 1 } else if char == "\t" { width += listIndent.count } else { break }
+        }
+        return width / listIndent.count
+    }
+
+    /// The list line shifted one level in or out, or nil if it's not a list line.
+    static func shiftingListIndent(of line: String, by delta: Int) -> String? {
+        let ns = line as NSString
+        guard listPrefix.firstMatch(in: line, range: NSRange(location: 0, length: ns.length)) != nil else { return nil }
+        if delta > 0 { return listIndent + line }
+        if line.hasPrefix("\t") { return String(line.dropFirst()) }
+        let spaces = line.prefix { $0 == " " }.count
+        return String(line.dropFirst(min(spaces, listIndent.count)))
+    }
+
     enum NewlineAction {
         /// Insert "\n" + prefix to continue the list.
         case continueList(prefix: String)

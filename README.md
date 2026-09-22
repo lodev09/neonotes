@@ -11,7 +11,7 @@ Markdown notes in your macOS menu bar — always one click away.
 - **Live syntax highlighting** while you type
 - **Preview mode** — rendered markdown with tables and clickable checkboxes
 - **Tasks** — `- [ ]` checkboxes, toggle in editor or preview
-- **List autocomplete** — Return continues bullets, numbers, and tasks
+- **List autocomplete** — Return continues bullets, numbers, and tasks; Tab / Shift-Tab nest and unnest
 - **Auto-sync** — external file changes are picked up automatically
 - **Note colors, resizable panel, launch at login**
 

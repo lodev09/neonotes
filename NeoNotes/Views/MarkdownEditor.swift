@@ -310,7 +310,50 @@ struct MarkdownEditor: NSViewRepresentable {
         }
 
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-            guard commandSelector == #selector(NSResponder.insertNewline(_:)) else { return false }
+            switch commandSelector {
+            case #selector(NSResponder.insertNewline(_:)):
+                return continueList(in: textView)
+            case #selector(NSResponder.insertTab(_:)):
+                return shiftListIndent(in: textView, by: 1)
+            case #selector(NSResponder.insertBacktab(_:)):
+                return shiftListIndent(in: textView, by: -1)
+            default:
+                return false
+            }
+        }
+
+        /// Tab / shift-tab on list lines nest or unnest them; elsewhere the default applies.
+        private func shiftListIndent(in textView: NSTextView, by delta: Int) -> Bool {
+            let text = textView.string as NSString
+            let selection = textView.selectedRange()
+            let linesRange = text.lineRange(for: selection)
+            var block = text.substring(with: linesRange)
+            let trailingNewline = block.hasSuffix("\n")
+            if trailingNewline { block.removeLast() }
+
+            let lines = block.components(separatedBy: "\n")
+            let shifted = lines.map { MarkdownSyntax.shiftingListIndent(of: $0, by: delta) }
+            guard shifted.contains(where: { $0 != nil }) else { return false }
+
+            textView.breakUndoCoalescing()
+            let replacement = zip(lines, shifted).map { $1 ?? $0 }.joined(separator: "\n")
+                + (trailingNewline ? "\n" : "")
+            guard textView.shouldChangeText(in: linesRange, replacementString: replacement) else { return true }
+            textView.textStorage?.replaceCharacters(in: linesRange, with: replacement)
+            textView.didChangeText()
+
+            if selection.length == 0 {
+                let firstDelta = (shifted[0] ?? lines[0]).utf16.count - lines[0].utf16.count
+                let location = max(linesRange.location, selection.location + firstDelta)
+                textView.setSelectedRange(NSRange(location: location, length: 0))
+            } else {
+                let length = (replacement as NSString).length - (trailingNewline ? 1 : 0)
+                textView.setSelectedRange(NSRange(location: linesRange.location, length: length))
+            }
+            return true
+        }
+
+        private func continueList(in textView: NSTextView) -> Bool {
             // Coalesced typing makes undo swallow everything since the last
             // pause; per-line granularity keeps undo predictable
             textView.breakUndoCoalescing()

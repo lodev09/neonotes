@@ -8,14 +8,7 @@ private extension NSAttributedString.Key {
     static let codeBlock = NSAttributedString.Key("codeBlock")
     /// Marks a thematic break paragraph so the layout manager can draw a full-width line.
     static let horizontalRule = NSAttributedString.Key("horizontalRule")
-    /// Marks table paragraphs so the layout manager can draw a rounded border around the table.
-    static let tableBlock = NSAttributedString.Key("tableBlock")
-    /// Marks a table's header row so the layout manager can draw its tinted background.
-    static let tableHeader = NSAttributedString.Key("tableHeader")
 }
-
-/// Cell padding used both for table layout and to reconstruct table frames when drawing chrome.
-private let tableCellPadding: CGFloat = 6
 
 /// Draws a rounded card behind fenced code blocks and full-width horizontal rules.
 private final class PreviewLayoutManager: NSLayoutManager {
@@ -39,44 +32,6 @@ private final class PreviewLayoutManager: NSLayoutManager {
                 path.lineWidth = 1
                 path.stroke()
             }
-            storage.enumerateAttribute(.tableBlock, in: charRange) { value, range, _ in
-                guard value != nil else { return }
-                // Expand to the whole table so partial redraws don't clip the chrome.
-                var tableRange = NSRange()
-                _ = storage.attribute(
-                    .tableBlock,
-                    at: range.location,
-                    longestEffectiveRange: &tableRange,
-                    in: NSRange(location: 0, length: storage.length)
-                )
-                let radius: CGFloat = 6
-                let tableRect = tableChromeRect(for: tableRange, in: container)
-                    .offsetBy(dx: origin.x, dy: origin.y)
-
-                var headerRange = NSRange()
-                if storage.attribute(
-                    .tableHeader,
-                    at: tableRange.location,
-                    longestEffectiveRange: &headerRange,
-                    in: tableRange
-                ) != nil {
-                    var headerRect = tableChromeRect(for: headerRange, in: container)
-                        .offsetBy(dx: origin.x, dy: origin.y)
-                    headerRect.origin.y = tableRect.minY
-                    NSGraphicsContext.current?.saveGraphicsState()
-                    NSBezierPath(rect: headerRect).addClip()
-                    var fill = headerRect
-                    fill.size.height += radius
-                    NSColor.controlAccentColor.withAlphaComponent(0.12).setFill()
-                    NSBezierPath(roundedRect: fill, xRadius: radius, yRadius: radius).fill()
-                    NSGraphicsContext.current?.restoreGraphicsState()
-                }
-
-                let path = NSBezierPath(roundedRect: tableRect, xRadius: radius, yRadius: radius)
-                NSColor.separatorColor.setStroke()
-                path.lineWidth = 1
-                path.stroke()
-            }
             storage.enumerateAttribute(.horizontalRule, in: charRange) { value, range, _ in
                 guard value != nil else { return }
                 let glyphs = glyphRange(forCharacterRange: range, actualCharacterRange: nil)
@@ -91,16 +46,6 @@ private final class PreviewLayoutManager: NSLayoutManager {
             }
         }
         super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
-    }
-
-    /// Full-width frame of a table range, outset to cover the cell padding
-    /// that sits outside the glyph bounding rect.
-    private func tableChromeRect(for charRange: NSRange, in container: NSTextContainer) -> NSRect {
-        let glyphs = glyphRange(forCharacterRange: charRange, actualCharacterRange: nil)
-        var rect = boundingRect(forGlyphRange: glyphs, in: container)
-        rect.origin.x = 0.5
-        rect.size.width = container.size.width - 1
-        return rect.insetBy(dx: 0, dy: -tableCellPadding)
     }
 }
 
@@ -236,6 +181,8 @@ private enum MarkdownRenderer {
     static var fontSize: CGFloat { MarkdownHighlighter.fontSize }
 
     private static let bullet = "\u{25CF}"
+    /// Horizontal shift per list nesting level.
+    private static let listIndent: CGFloat = 18
 
     static func render(_ text: String) -> NSAttributedString {
         let result = NSMutableAttributedString()
@@ -301,17 +248,19 @@ private enum MarkdownRenderer {
             )
             return quote
 
-        case .listItem(let marker, let text):
+        case .listItem(let marker, let text, let level):
+            let nested = CGFloat(level) * listIndent
             let item = NSMutableAttributedString(string: "\(marker)\t", attributes: markerAttributes(marker))
             item.append(inline(text))
             item.addAttribute(
                 .paragraphStyle,
-                value: style(firstIndent: 4, headIndent: 22, tabStop: 22),
+                value: style(firstIndent: 4 + nested, headIndent: 22 + nested, tabStop: 22 + nested),
                 range: NSRange(location: 0, length: item.length)
             )
             return item
 
-        case .task(let done, let text, let line):
+        case .task(let done, let text, let line, let level):
+            let nested = CGFloat(level) * listIndent
             let item = NSMutableAttributedString()
             let attachment = NSTextAttachment()
             attachment.image = checkboxImage(done: done)
@@ -323,7 +272,7 @@ private enum MarkdownRenderer {
             item.append(inline(text, color: done ? .secondaryLabelColor : .labelColor))
             item.addAttribute(
                 .paragraphStyle,
-                value: style(firstIndent: 4, headIndent: 26, tabStop: 26),
+                value: style(firstIndent: 4 + nested, headIndent: 26 + nested, tabStop: 26 + nested),
                 range: NSRange(location: 0, length: item.length)
             )
             return item
@@ -356,7 +305,6 @@ private enum MarkdownRenderer {
         table.collapsesBorders = true
 
         let result = NSMutableAttributedString()
-        var headerLength = 0
         for (rowIndex, row) in ([header] + rows).enumerated() {
             for column in 0..<header.count {
                 let block = NSTextTableBlock(
@@ -366,17 +314,13 @@ private enum MarkdownRenderer {
                     startingColumn: column,
                     columnSpan: 1
                 )
-                // Interior grid lines only — the rounded outer border and header
-                // background are drawn by PreviewLayoutManager.
-                block.setBorderColor(.separatorColor)
-                if rowIndex > 0 {
-                    block.setWidth(1, type: .absoluteValueType, for: .border, edge: .minY)
-                }
-                if column > 0 {
-                    block.setWidth(1, type: .absoluteValueType, for: .border, edge: .minX)
-                }
-                block.setWidth(tableCellPadding, type: .absoluteValueType, for: .padding)
+                block.setBorderColor(.controlAccentColor)
+                block.setWidth(1, type: .absoluteValueType, for: .border)
+                block.setWidth(6, type: .absoluteValueType, for: .padding)
                 block.setValue(100.0 / CGFloat(header.count), type: .percentageValueType, for: .width)
+                if rowIndex == 0 {
+                    block.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.12)
+                }
 
                 let style = NSMutableParagraphStyle()
                 style.textBlocks = [block]
@@ -393,14 +337,7 @@ private enum MarkdownRenderer {
                 cell.addAttribute(.paragraphStyle, value: style, range: NSRange(location: 0, length: cell.length))
                 result.append(cell)
             }
-            if rowIndex == 0 {
-                headerLength = result.length
-            }
         }
-        // Exclude the final newline — its glyph is laid out as an extra
-        // full-width fragment below the table and would inflate the chrome rect.
-        result.addAttribute(.tableBlock, value: true, range: NSRange(location: 0, length: result.length - 1))
-        result.addAttribute(.tableHeader, value: true, range: NSRange(location: 0, length: headerLength))
         return result
     }
 
@@ -504,8 +441,8 @@ private enum MarkdownRenderer {
         case paragraph(String)
         case code(String)
         case quote(String)
-        case listItem(marker: String, text: String)
-        case task(done: Bool, text: String, line: Int)
+        case listItem(marker: String, text: String, level: Int)
+        case task(done: Bool, text: String, line: Int, level: Int)
         case table(header: [String], alignments: [NSTextAlignment], rows: [[String]])
         case rule
         case blank
@@ -631,13 +568,16 @@ private enum MarkdownRenderer {
                 blocks.append(.rule)
             } else if let m = groups(taskRegex, trimmed) {
                 flushParagraph()
-                blocks.append(.task(done: m[1].lowercased() == "x", text: m[2], line: lineIndex))
+                let level = MarkdownSyntax.listLevel(of: line)
+                blocks.append(.task(done: m[1].lowercased() == "x", text: m[2], line: lineIndex, level: level))
             } else if let m = groups(bulletRegex, trimmed) {
                 flushParagraph()
-                blocks.append(.listItem(marker: bullet, text: m[1]))
+                let level = MarkdownSyntax.listLevel(of: line)
+                blocks.append(.listItem(marker: bullet, text: m[1], level: level))
             } else if let m = groups(orderedRegex, trimmed) {
                 flushParagraph()
-                blocks.append(.listItem(marker: "\(m[1]).", text: m[2]))
+                let level = MarkdownSyntax.listLevel(of: line)
+                blocks.append(.listItem(marker: "\(m[1]).", text: m[2], level: level))
             } else {
                 paragraph.append(trimmed)
             }
