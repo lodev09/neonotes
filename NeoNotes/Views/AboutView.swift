@@ -30,7 +30,7 @@ struct AboutView: View {
                 linkButton("GitHub", symbol: "chevron.left.forwardslash.chevron.right",
                            url: "https://github.com/lodev09/neonotes")
                 linkButton("@lodev09", symbol: "person.crop.circle",
-                           url: "https://github.com/lodev09")
+                           url: "https://lodev09.com")
             }
             .padding(.top, 14)
 

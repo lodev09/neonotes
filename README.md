@@ -13,7 +13,8 @@ Markdown notes in your macOS menu bar — always one click away.
 - **Tasks** — `- [ ]` checkboxes, toggle in editor or preview
 - **List autocomplete** — Return continues bullets, numbers, and tasks; Tab / Shift-Tab nest and unnest
 - **Auto-sync** — external file changes are picked up automatically
-- **Note colors, resizable panel, launch at login**
+- **Note tabs** — click to switch, right-click for color, drag to reorder
+- **Resizable panel, launch at login**
 
 ## Install
 

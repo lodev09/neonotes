@@ -379,9 +379,9 @@ struct NotesPanelView: View {
             .zIndex(draggingID == note.id ? 1 : 0)
             .overlay {
                 DotHitArea(
-                    toolTip: isSelected ? "\(note.title) — Note Color · Drag to Reorder" : note.title,
+                    toolTip: isSelected ? "\(note.title) — Right-click for Color · Drag to Reorder" : note.title,
                     onClick: { store.selectedID = note.id },
-                    menu: isSelected ? { colorMenu(for: note) } : nil,
+                    menu: { colorMenu(for: note) },
                     onPress: { draggingID = note.id },
                     onDrag: { dragDot(note, by: $0, size: size) },
                     onRelease: {
@@ -453,11 +453,11 @@ final class ClosureMenuItem: NSMenuItem {
     @objc private func fire() { handler() }
 }
 
-/// Transparent hit target: click selects or pops the menu, horizontal drag reports its delta.
+/// Transparent hit target: click selects, right-click pops the menu, horizontal drag reports its delta.
 struct DotHitArea: NSViewRepresentable {
     var toolTip: String
     var onClick: () -> Void
-    var menu: (() -> NSMenu)?
+    var menu: () -> NSMenu
     var onPress: () -> Void
     var onDrag: ((CGFloat) -> Void)?
     var onRelease: () -> Void
@@ -478,7 +478,7 @@ struct DotHitArea: NSViewRepresentable {
 
 final class DotHitView: NSView {
     var onClick: () -> Void = {}
-    var makeMenu: (() -> NSMenu)?
+    var makeMenu: () -> NSMenu = { NSMenu() }
     var onPress: () -> Void = {}
     var onDrag: ((CGFloat) -> Void)?
     var onRelease: () -> Void = {}
@@ -504,10 +504,10 @@ final class DotHitView: NSView {
         defer { dragStartX = nil; dragging = false }
         onRelease()
         guard !dragging else { return }
-        if let makeMenu {
-            makeMenu().popUp(positioning: nil, at: NSPoint(x: 0, y: bounds.height + 4), in: self)
-        } else {
-            onClick()
-        }
+        onClick()
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        makeMenu().popUp(positioning: nil, at: NSPoint(x: 0, y: bounds.height + 4), in: self)
     }
 }
